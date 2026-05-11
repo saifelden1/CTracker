@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses Tracker</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        h1 { text-align: center; color: #2c3e50; }
+        .courses-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; align-items: start; }
+        .course-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 4px solid #3498db; display: flex; flex-direction: column; }
+        .course-card.not-started { border-top-color: #e74c3c; }
+        .course-card.in-progress { border-top-color: #f39c12; }
+        .course-card.completed { border-top-color: #2ecc71; }
+        .course-title { margin: 0 0 10px; color: #2c3e50; font-size: 20px; }
+        .course-info { font-size: 14px; color: #555; margin-bottom: 15px; }
+        .course-info span { display: block; margin-bottom: 5px; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #fff; }
+        .status-badge.not-started { background-color: #e74c3c; }
+        .status-badge.in-progress { background-color: #f39c12; }
+        .status-badge.completed { background-color: #2ecc71; }
+        .progress-bar-container { background-color: #ecf0f1; border-radius: 4px; overflow: hidden; height: 20px; margin-bottom: 15px; position: relative; }
+        .progress-bar { height: 100%; background-color: #3498db; transition: width 0.5s ease; }
+        .progress-text { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 12px; line-height: 20px; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.5); font-weight: bold; width: 100%; text-align: center; }
+        .modules-list { list-style: none; padding: 0; margin: 0; font-size: 14px; border-top: 1px solid #eee; padding-top: 10px; flex-grow: 1; }
+        .section-title { font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #2980b9; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
+        .session-item { padding: 4px 0; border-bottom: 1px solid #f9f9f9; display: flex; justify-content: space-between; padding-left: 10px; font-size: 13px; }
+        .session-item:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+    <h1>📚 My Courses Tracker</h1>
+    <div class="courses-container">
+
+        <div class="course-card in-progress">
+            <h2 class="course-title">Arafa Hardware Course (PCB Design & Electronics)</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Eng. Arafa</span>
+                <span><strong>Platform:</strong> Private course</span>
+                <span><span class="status-badge in-progress">Completed once, Currently Rewatching (Session 2/27)</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #f39c12;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Section 1: Foundation (Sessions 1-11) 🔄 IN PROGRESS</div>
+                <div class="session-item"><span>S1: Introduction / Initial Session (March 25, 2025) ✅ Rewatched</span></div>
+                <div class="session-item"><span>S2: (April 19, 2025) ✅ Rewatched</span></div>
+                <div class="session-item"><span>S3: PCB Basics (April 26, 2025) ⏳</span></div>
+                <div class="session-item"><span>S4: [Missing in log / Skipped] ⏳</span></div>
+                <div class="session-item"><span>S5: Components library task review (May 9, 2025) ⏳</span></div>
+                <div class="session-item"><span>S6: Resistors Applications #1 (June 7, 2025) ⏳</span></div>
+                <div class="session-item"><span>S7: Resistors Applications #2 (June 13, 2025) ⏳</span></div>
+                <div class="session-item"><span>S8: Intro about capacitors (June 22, 2025) ⏳</span></div>
+                <div class="session-item"><span>S9: Capacitors #2 / Professional schematic creation (July/August 2025) ⏳</span></div>
+                <div class="session-item"><span>S10: Altium Schematic (One Minute Power) (July 11, 2025) ⏳</span></div>
+                <div class="session-item"><span>S11: Altium PCB (One Minute Power) (July 19, 2025) ⏳</span></div>
+                <div class="section-title">Section 2: Projects & Components Deep Dive (Sessions 12-21) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>S12: RP2040 Project#1 (August 1, 2025) ⏳</span></div>
+                <div class="session-item"><span>S13: RP2040 Review (August 8, 2025) ⏳</span></div>
+                <div class="session-item"><span>S13A: Layout#1 (August 31, 2025) ⏳</span></div>
+                <div class="session-item"><span>S14: RP2040 #2 / STM32 Project Discussion (Aug/Sept 2025) ⏳</span></div>
+                <div class="session-item"><span>S15: Diodes & Project B details (November 22, 2025) ⏳</span></div>
+                <div class="session-item"><span>S16: Capacitors recap (October 17, 2025) ⏳</span></div>
+                <div class="session-item"><span>S17: [Missing in log / Skipped] ⏳</span></div>
+                <div class="session-item"><span>S18: Inductors#3 (November 16, 2025) ⏳</span></div>
+                <div class="session-item"><span>S19: Diodes#1 (November 22, 2025) ⏳</span></div>
+                <div class="session-item"><span>S20: ESP32 Project Discussion#1 (November 28, 2025) ⏳</span></div>
+                <div class="session-item"><span>S21: ESP32 Project Discussion#2 (December 6, 2025) ⏳</span></div>
+                <div class="section-title">Section 3: Advanced Communication & Final Projects (Sessions 22-Final) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>S22: [Missing in log / Skipped] ⏳</span></div>
+                <div class="session-item"><span>S23: Communication#1 (January 30, 2026) ⏳</span></div>
+                <div class="session-item"><span>S24: Communication#2 (February 16, 2026) ⏳</span></div>
+                <div class="session-item"><span>S25: Communication#3 (Gigabit Ethernet & USB-C PD) (February 27, 2026) ⏳</span></div>
+                <div class="session-item"><span>S26: Course A Project Discussion#1 (March 9, 2026) ⏳</span></div>
+                <div class="session-item"><span>S27: Course A Project Discussion#2 (April 15, 2026) ⏳</span></div>
+                <div class="session-item"><span>Final Session: Course A Project Discussion#3 (May 2, 2026) ⏳</span></div>
+                <div class="session-item"><span>PCB design fundamentals</span></div>
+                <div class="session-item"><span>Component selection (resistors, capacitors, inductors, diodes)</span></div>
+                <div class="session-item"><span>Professional schematic creation</span></div>
+                <div class="session-item"><span>Altium Designer workflows</span></div>
+                <div class="session-item"><span>Microcontroller projects (RP2040, STM32, ESP32)</span></div>
+                <div class="session-item"><span>PCB layout techniques</span></div>
+                <div class="session-item"><span>Communication protocols (Gigabit Ethernet, USB-C PD)</span></div>
+                <div class="session-item"><span>Real-world project implementation</span></div>
+                <div class="session-item"><span>Already completed once (full understanding of content)</span></div>
+                <div class="session-item"><span>Rewatching for deeper mastery and reinforcement</span></div>
+                <div class="session-item"><span>Highly relevant to current work (designed 10 PCBs at Tomatiki)</span></div>
+                <div class="session-item"><span>Aligns with Altium Designer expertise</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card in-progress">
+            <h2 class="course-title">PNJunction Embedded Linux Diploma</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Eng. Motassem Elayed</span>
+                <span><strong>Platform:</strong> PNJunction (Private course)</span>
+                <span><span class="status-badge in-progress">In Progress - Completed up to RPI section</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 50%; background-color: #f39c12;"></div>
+                <div class="progress-text">50%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Module 01: Python ✅ COMPLETED</div>
+                <div class="session-item"><span>01_introduction ✅</span></div>
+                <div class="session-item"><span>02_String_Function ✅</span></div>
+                <div class="session-item"><span>03_Lists_modules ✅</span></div>
+                <div class="session-item"><span>04_tuple_set_dictionary_libraries ✅</span></div>
+                <div class="session-item"><span>05_Class_Package ✅</span></div>
+                <div class="session-item"><span>06_Files_try/except_Property ✅</span></div>
+                <div class="session-item"><span>07_Thread_Socket_system_Gui ✅</span></div>
+                <div class="section-title">Module 02: C++ ✅ COMPLETED</div>
+                <div class="session-item"><span>01_Introduction ✅</span></div>
+                <div class="session-item"><span>02_function_array_pointer ✅</span></div>
+                <div class="session-item"><span>03_auto_casting_const_lambda ✅</span></div>
+                <div class="session-item"><span>04_constexpr_init_enum_startup ✅</span></div>
+                <div class="session-item"><span>05_class_inline_default_delete_this_const_friend ✅</span></div>
+                <div class="session-item"><span>06_static_operator ✅</span></div>
+                <div class="session-item"><span>07_TypeCategory_CopyConstructor ✅</span></div>
+                <div class="session-item"><span>08_move_inheritance ✅</span></div>
+                <div class="session-item"><span>09_Polymorphism_String ✅</span></div>
+                <div class="session-item"><span>10_array_vector_set ✅</span></div>
+                <div class="session-item"><span>11_map_algorithm ✅</span></div>
+                <div class="session-item"><span>12_trycatch_namespace_RAII_smartPointers ✅</span></div>
+                <div class="session-item"><span>13_Templates_Threading ✅</span></div>
+                <div class="section-title">Module 03: Linux ✅ COMPLETED</div>
+                <div class="session-item"><span>01_Introduction ✅</span></div>
+                <div class="session-item"><span>02_BootingSequence ✅</span></div>
+                <div class="session-item"><span>03_Initprocess and system calls ✅</span></div>
+                <div class="session-item"><span>04_Folder Structure ✅</span></div>
+                <div class="session-item"><span>05_Shell ✅</span></div>
+                <div class="session-item"><span>06_Shell part2 ✅</span></div>
+                <div class="session-item"><span>07_commands part1 ✅</span></div>
+                <div class="session-item"><span>08_Commands Part2 ✅</span></div>
+                <div class="session-item"><span>09_User Administration ✅</span></div>
+                <div class="session-item"><span>10_process ✅</span></div>
+                <div class="section-title">Module 04: Bash ⏳ INCOMPLETE</div>
+                <div class="session-item"><span>01_introduction ✅</span></div>
+                <div class="session-item"><span>02_function_string ✅</span></div>
+                <div class="session-item"><span>03_array_system ⏳ **[MISSING]**</span></div>
+                <div class="section-title">Module 05: Raspberry Pi ✅ COMPLETED</div>
+                <div class="session-item"><span>01_Introduction ✅</span></div>
+                <div class="session-item"><span>02_Gpio ✅</span></div>
+                <div class="session-item"><span>03_PWM ✅</span></div>
+                <div class="session-item"><span>04_tty_Uart ✅</span></div>
+                <div class="session-item"><span>05_spi_i2c_devicetree ✅</span></div>
+                <div class="session-item"><span>06_bringup_dts ✅</span></div>
+                <div class="session-item"><span>07_modules ✅</span></div>
+                <div class="session-item"><span>08_IOT_OSI_model ✅</span></div>
+                <div class="session-item"><span>09_NetworkManager_Mqtt ✅</span></div>
+                <div class="session-item"><span>10_GraduationProject_Ideas ✅</span></div>
+                <div class="section-title">Module 06: Yocto ⏳ NOT STARTED</div>
+                <div class="session-item"><span>01_introduction ⏳</span></div>
+                <div class="session-item"><span>02_local.conf ⏳</span></div>
+                <div class="session-item"><span>03_Recipe_Basics ⏳</span></div>
+                <div class="session-item"><span>04_Layer ⏳</span></div>
+                <div class="session-item"><span>05_Distro ⏳</span></div>
+                <div class="session-item"><span>06_machine ⏳</span></div>
+                <div class="session-item"><span>07_Bitbake Syntax ⏳</span></div>
+                <div class="session-item"><span>08_Recipe ⏳</span></div>
+                <div class="session-item"><span>09_systemd/systemV ⏳</span></div>
+                <div class="session-item"><span>10_packages ⏳</span></div>
+                <div class="session-item"><span>11_devtool ⏳</span></div>
+                <div class="session-item"><span>12_sdk_kernel ⏳</span></div>
+                <div class="section-title">Module 07: Design Patterns ⏳ NOT STARTED</div>
+                <div class="session-item"><span>01_SOLID_UML_PlantUML ⏳</span></div>
+                <div class="session-item"><span>02_Creational_Pattern ⏳</span></div>
+                <div class="session-item"><span>03_Structural_Pattern ⏳</span></div>
+                <div class="session-item"><span>04_Behavioural_Pattern Part1 ⏳</span></div>
+                <div class="session-item"><span>05_Behavioural_Pattern Part2 ⏳</span></div>
+                <div class="section-title">Module 08: Device Driver ⏳ NOT STARTED</div>
+                <div class="session-item"><span>01_introduction ⏳</span></div>
+                <div class="session-item"><span>02_hardware ⏳</span></div>
+                <div class="session-item"><span>03_serial&ioctl ⏳</span></div>
+                <div class="section-title">Module 09: Rust Programming ⏳ NOT STARTED</div>
+                <div class="session-item"><span>01_Crashing Course ⏳</span></div>
+                <div class="session-item"><span>02_Basics ⏳</span></div>
+                <div class="session-item"><span>03_Ownership, References, Struct ⏳</span></div>
+                <div class="session-item"><span>04_Packages ⏳</span></div>
+                <div class="section-title">Module 10: Docker ⏳ NOT STARTED</div>
+                <div class="session-item"><span>01_Introduction ⏳</span></div>
+                <div class="session-item"><span>02_Dockerfile ⏳</span></div>
+                <div class="session-item"><span>03_volume-network-dockercompose ⏳</span></div>
+                <div class="section-title">Module 11: Unit Testing ⏳ NOT STARTED</div>
+                <div class="session-item"><span>02_TEST_F && stubs ⏳</span></div>
+                <div class="session-item"><span>notes ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">Classic AUTOSAR IN Depth Diploma</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Mahmoud Osama, Ahmed Wageh, Keroles Shenouda</span>
+                <span><strong>Platform:</strong> Learn in Depth</span>
+                <span><span class="status-badge not-started">Not Started</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Unit 1: Getting Started with AUTOSAR ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Introduction to AUTOSAR ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: AUTOSAR Architecture Overview ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: AUTOSAR Methodology ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: AUTOSAR Toolchain Setup ⏳</span></div>
+                <div class="session-item"><span>Lesson 5: AUTOSAR Configuration Basics ⏳</span></div>
+                <div class="session-item"><span>Lesson 6: First AUTOSAR Project ⏳</span></div>
+                <div class="section-title">Unit 2: AUTOSAR Methodology ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Understanding ARXML ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: AUTOSAR_MOD_ECUConfigurationParameters ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: PlatformTypes.arxml ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: AUTOSAR XML Schema ⏳</span></div>
+                <div class="session-item"><span>Lesson 5: ARXML Attributes and Comments ⏳</span></div>
+                <div class="session-item"><span>Lesson 6: Namespace Declaration and Schema Validation ⏳</span></div>
+                <div class="session-item"><span>Lesson 7: Introduction To Adaptive AUTOSAR ⏳</span></div>
+                <div class="section-title">Unit 3: AUTOSAR SW Layer ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: AUTOSAR ASW Layer concepts ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: SWCs Types ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: Ports and Interfaces (Sender Receiver Interface) ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: Ports and Interfaces (Client Server Interface) ⏳</span></div>
+                <div class="session-item"><span>Lesson 5: Composition and Connectors ⏳</span></div>
+                <div class="session-item"><span>Lesson 6: Runnables ⏳</span></div>
+                <div class="session-item"><span>Lesson 7: RTE Events ⏳</span></div>
+                <div class="session-item"><span>Lesson 8: RTE Layer ⏳</span></div>
+                <div class="session-item"><span>Lesson 9: AUTOSAR Types and Data Conversion ⏳</span></div>
+                <div class="session-item"><span>Lesson 10: Door Lock Indication Project ⏳</span></div>
+                <div class="section-title">Unit 4: AUTOSAR OS ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Intro to OSEK/VDX ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: OSEK-VDX Tasks ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: OSEK-VDX Resources ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: OSEK-VDX Counters/Alarm ⏳</span></div>
+                <div class="session-item"><span>Lesson 5: OSEK-VDX Events ⏳</span></div>
+                <div class="session-item"><span>Lesson 6: Interrupts Processing ⏳</span></div>
+                <div class="session-item"><span>Lesson 7: HOOKs Routines ⏳</span></div>
+                <div class="session-item"><span>Lesson 8: AUTOSAR OS ⏳</span></div>
+                <div class="session-item"><span>Lesson 9: AUTOSAR Project ⏳</span></div>
+                <div class="session-item"><span>Lesson 10: Quizzes ⏳</span></div>
+                <div class="section-title">Unit 5: AUTOSAR MCAL Layer ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: MCAL Introduction ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: MCU Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: Port Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: Dio Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 5: Gpt Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 6: ICU Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 7: PWM Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 8: ADC Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 9: SPI Handler/Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 10: UART Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 11: CAN Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 12: Ethernet Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 13: FlexRay Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 14: LIN Driver ⏳</span></div>
+                <div class="section-title">Unit 6: AUTOSAR COM Stack ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: COM Stack Overview ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: COM Module ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: PDU Router ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: CAN Interface ⏳</span></div>
+                <div class="session-item"><span>Lesson 5: CAN Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 6: LIN Interface ⏳</span></div>
+                <div class="session-item"><span>Lesson 7: FlexRay Interface ⏳</span></div>
+                <div class="session-item"><span>Lesson 8: Ethernet Interface ⏳</span></div>
+                <div class="session-item"><span>Lesson 9: TCP/IP Stack ⏳</span></div>
+                <div class="session-item"><span>Lesson 10: SOME/IP ⏳</span></div>
+                <div class="session-item"><span>Lesson 11: Diagnostic Communication Manager ⏳</span></div>
+                <div class="session-item"><span>Lesson 12: Transport Protocol ⏳</span></div>
+                <div class="session-item"><span>Lesson 13: CAN TP ⏳</span></div>
+                <div class="section-title">Unit 7: AUTOSAR Memory Stack ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Memory Stack Overview ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: NVRAM Manager ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: Memory Interface ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: Flash Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 5: EEPROM Driver ⏳</span></div>
+                <div class="session-item"><span>Lesson 6: Fee (Flash EEPROM Emulation) ⏳</span></div>
+                <div class="section-title">Unit 8: AUTOSAR Diagnostic Stack ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Diagnostic Stack Overview ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: DCM (Diagnostic Communication Manager) ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: DEM (Diagnostic Event Manager) ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: FIM (Function Inhibition Manager) ⏳</span></div>
+                <div class="section-title">Unit 9: AUTOSAR Crypto Stack ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Crypto Stack Overview ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: CSM (Crypto Service Manager) ⏳</span></div>
+                <div class="section-title">Unit 10: Mastering CAN Protocol ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: CAN Protocol Fundamentals ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: CAN Physical Layer ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: CAN Data Link Layer ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: CAN Frame Formats ⏳</span></div>
+                <div class="session-item"><span>Lesson 5: CAN Error Handling ⏳</span></div>
+                <div class="session-item"><span>Lesson 6: CAN Bus Arbitration ⏳</span></div>
+                <div class="session-item"><span>Lesson 7: CAN in AUTOSAR ⏳</span></div>
+                <div class="session-item"><span>Lesson 8: CAN Network Design ⏳</span></div>
+                <div class="section-title">Unit 11: AUTOSAR Network Management Modules ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: NM Overview ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: CAN Network Management ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: LIN Network Management ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: FlexRay Network Management ⏳</span></div>
+                <div class="session-item"><span>AUTOSAR's architectural essence, ARXML design</span></div>
+                <div class="session-item"><span>AUTOSAR Software Layer (ASW, RTE, Runnables, Ports)</span></div>
+                <div class="session-item"><span>AUTOSAR OS (OSEK/VDX standard, Tasks, Alarms, ISRs)</span></div>
+                <div class="session-item"><span>CAN Protocol & Network Management</span></div>
+                <div class="session-item"><span>MCAL Layer, COM, NVM, Diagnostic, and V2X stacks</span></div>
+                <div class="session-item"><span>Awaiting completion by year-end for advanced units (5-9)</span></div>
+                <div class="session-item"><span>Includes practical labs and projects mirroring industry challenges</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card in-progress">
+            <h2 class="course-title">ROS 2 for Beginners (ROS Jazzy)</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Edouard Renard</span>
+                <span><strong>Platform:</strong> Udemy</span>
+                <span><span class="status-badge in-progress">🔄 IN PROGRESS (Video 58/108)</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 54%; background-color: #f39c12;"></div>
+                <div class="progress-text">54%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Section 1: Welcome! (12 lectures - 48min)</div>
+                <div class="session-item"><span>Lectures 1-12 ✅</span></div>
+                <div class="section-title">Section 2: ROS 2 Workspace and Packages (10 lectures)</div>
+                <div class="session-item"><span>Lectures 13-24 ✅</span></div>
+                <div class="section-title">Section 3: ROS 2 Tools and Introspection (9 lectures)</div>
+                <div class="session-item"><span>Lectures 25-33 ✅</span></div>
+                <div class="section-title">Section 4: ROS 2 Topics (14 lectures)</div>
+                <div class="session-item"><span>Lectures 34-48 ✅</span></div>
+                <div class="section-title">Section 5: ROS 2 Services (14 lectures)</div>
+                <div class="session-item"><span>Lectures 49-58 ✅</span></div>
+                <div class="session-item"><span>Lectures 59-62 ⏳</span></div>
+                <div class="section-title">Section 6: ROS 2 Interfaces (Custom Messages & Services) (12 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 63-74 ⏳</span></div>
+                <div class="section-title">Section 7: ROS 2 Parameters (10 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>75-76. Intro & What is a ROS 2 Parameter? (4min) ⏳</span></div>
+                <div class="session-item"><span>77-79. Using Parameters in Python/C++ Nodes & Turtlesim (28min) ⏳</span></div>
+                <div class="session-item"><span>80. YAML Parameter Files (10min) ⏳</span></div>
+                <div class="session-item"><span>81-83. Activity 05 - ROS 2 Parameters & Solutions (15min) ⏳</span></div>
+                <div class="session-item"><span>84-85. Extra: Parameter Callbacks & Conclusion (12min) ⏳</span></div>
+                <div class="section-title">Section 8: ROS 2 Launch Files (10 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>86-87. Intro & What is a ROS 2 Launch File? (3min) ⏳</span></div>
+                <div class="session-item"><span>88-89. Create/Install XML & Python Launch Files (26min) ⏳</span></div>
+                <div class="session-item"><span>90-92. Node Configurations: Remappings, Parameters & Namespaces (30min) ⏳</span></div>
+                <div class="session-item"><span>93-95. Activity 06 (Launch Files), Solution & Conclusion (15min) ⏳</span></div>
+                <div class="section-title">Section 9: Turtlesim Final Project (11 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 96-106 ⏳</span></div>
+                <div class="section-title">Section 10: Conclusion & Next Steps (2 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 107-108 ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card in-progress">
+            <h2 class="course-title">ROS 2 for Beginners Level 2 - TF | URDF | RViz | Gazebo</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Edouard Renard</span>
+                <span><strong>Platform:</strong> Udemy</span>
+                <span><span class="status-badge in-progress">🔄 IN PROGRESS (Video 47/88)</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 53%; background-color: #f39c12;"></div>
+                <div class="progress-text">53%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Section 1: Welcome & Setup (6 lectures) ✅ COMPLETED</div>
+                <div class="session-item"><span>Lectures 1-6 ✅</span></div>
+                <div class="section-title">Section 2: Understanding TF (TransForm) (4 lectures) ✅ COMPLETED</div>
+                <div class="session-item"><span>Lectures 7-10 ✅</span></div>
+                <div class="section-title">Section 3: URDF Basics (10 lectures) ✅ COMPLETED</div>
+                <div class="session-item"><span>Lectures 11-20 ✅</span></div>
+                <div class="section-title">Section 4: Robot State Publisher & Launch Files (7 lectures) ✅ COMPLETED</div>
+                <div class="session-item"><span>Lectures 21-27 ✅</span></div>
+                <div class="section-title">Section 5: Xacro - Clean Up URDF (8 lectures) ✅ COMPLETED</div>
+                <div class="session-item"><span>Lectures 28-36 ✅</span></div>
+                <div class="section-title">Section 6: Gazebo Simulation (NEW VERSION) (15 lectures) 🔄 IN PROGRESS</div>
+                <div class="session-item"><span>Lectures 37-47 ✅</span></div>
+                <div class="session-item"><span>Lectures 48-51 ⏳</span></div>
+                <div class="section-title">Section 7: Add a Sensor in Gazebo (4 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 52-55 ⏳</span></div>
+                <div class="section-title">Section 8: Final Project - Robotic Arm (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 56-60 ⏳</span></div>
+                <div class="section-title">Section 9: OLD Gazebo Content (Archive) (28 lectures) ⏳ OPTIONAL/ARCHIVE</div>
+                <div class="session-item"><span>61. PLEASE READ - Old Gazebo Content (1min) ⏳</span></div>
+                <div class="session-item"><span>62-85. [Old Gazebo tutorials - archived content] ⏳</span></div>
+                <div class="section-title">Section 10: Conclusion (3 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 86-88 ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">ROS 2 for Beginners Level 3 - Advanced Concepts</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Edouard Renard</span>
+                <span><strong>Platform:</strong> Udemy</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Section 1: Welcome & Setup (4 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 1-4 ⏳</span></div>
+                <div class="section-title">Section 2: ROS 2 Actions - Python (16 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 5-20 ⏳</span></div>
+                <div class="section-title">Section 3: ROS 2 Actions - C++ (11 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 21-31 ⏳</span></div>
+                <div class="section-title">Section 4: Actions Project (7 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 32-38 ⏳</span></div>
+                <div class="section-title">Section 5: Lifecycle Nodes - Python (7 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 39-46 ⏳</span></div>
+                <div class="section-title">Section 6: Lifecycle Nodes - C++ (2 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 47-48 ⏳</span></div>
+                <div class="section-title">Section 7: Lifecycle Nodes Project (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 49-53 ⏳</span></div>
+                <div class="section-title">Section 8: Executors (8 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 54-61 ⏳</span></div>
+                <div class="section-title">Section 9: Components (6 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 62-67 ⏳</span></div>
+                <div class="section-title">Section 10: Final Project - Combining Everything (7 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 68-74 ⏳</span></div>
+                <div class="section-title">Section 11: Conclusion (1 lecture) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>75. Bonus Lecture (3min) ⏳</span></div>
+                <div class="session-item"><span>Action definition and generation</span></div>
+                <div class="session-item"><span>Action servers and clients (Python & C++)</span></div>
+                <div class="session-item"><span>Goal acceptance/rejection</span></div>
+                <div class="session-item"><span>Goal state machine</span></div>
+                <div class="session-item"><span>Goal feedback and cancellation</span></div>
+                <div class="session-item"><span>Goal policies (parallel, refuse, preempt, queue)</span></div>
+                <div class="session-item"><span>ros2 action command line tools</span></div>
+                <div class="session-item"><span>State management (unconfigured, inactive, active, finalized)</span></div>
+                <div class="session-item"><span>State transitions</span></div>
+                <div class="session-item"><span>Error handling</span></div>
+                <div class="session-item"><span>Lifecycle managers</span></div>
+                <div class="session-item"><span>Launch files for lifecycle nodes</span></div>
+                <div class="session-item"><span>Initialization sequences</span></div>
+                <div class="session-item"><span>Callback execution model</span></div>
+                <div class="session-item"><span>Single-threaded vs multi-threaded executors</span></div>
+                <div class="session-item"><span>Callback groups</span></div>
+                <div class="session-item"><span>Multiple nodes in one executable</span></div>
+                <div class="session-item"><span>Spin mechanisms</span></div>
+                <div class="session-item"><span>Manual composition (Python & C++)</span></div>
+                <div class="session-item"><span>ROS 2 components (plugins)</span></div>
+                <div class="session-item"><span>Runtime component loading</span></div>
+                <div class="session-item"><span>Component launch files</span></div>
+                <div class="session-item"><span>Dynamic node management</span></div>
+                <div class="session-item"><span>**ROAR'26:** Advanced node management and action-based control</span></div>
+                <div class="session-item"><span>**Shell Eco-marathon 2027:** Complex state machines and lifecycle management</span></div>
+                <div class="session-item"><span>**Autonomous Systems:** Long-running navigation and control tasks</span></div>
+                <div class="session-item"><span>**Professional Development:** Foundation for ros2_control, nav2, moveit2</span></div>
+                <div class="session-item"><span>ROS 2 Level 1 (required)</span></div>
+                <div class="session-item"><span>ROS 2 Level 2 (optional but helpful)</span></div>
+                <div class="session-item"><span>Python and C++ basics</span></div>
+                <div class="session-item"><span>Ubuntu installation</span></div>
+                <div class="session-item"><span>Each section is independent - can be learned in any order</span></div>
+                <div class="session-item"><span>Foundation for advanced ROS 2 frameworks (ros2_control, nav2, moveit2)</span></div>
+                <div class="session-item"><span>Critical for professional robotics applications</span></div>
+                <div class="session-item"><span>Includes challenges and complete final project</span></div>
+                <div class="session-item"><span>Combines all 4 concepts in final Turtlebot3 project</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">Raspberry Pi For Beginners - 2026 Complete Course</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Edouard Renard</span>
+                <span><strong>Platform:</strong> Udemy</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Section 1: Welcome (4 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 1-4 ⏳</span></div>
+                <div class="section-title">Section 2: Setup Raspberry Pi (9 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 5-13 ⏳</span></div>
+                <div class="section-title">Section 3: Python 3 Programming Basics (17 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 14-31 ⏳</span></div>
+                <div class="section-title">Section 4: Electronics & GPIO Basics (19 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 32-50 ⏳</span></div>
+                <div class="section-title">Section 5: PIR Motion Sensor (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 51-55 ⏳</span></div>
+                <div class="section-title">Section 6: Linux Terminal & Command Line (11 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 56-66 ⏳</span></div>
+                <div class="section-title">Section 7: Send Emails from Raspberry Pi (6 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 67-72 ⏳</span></div>
+                <div class="section-title">Section 8: Raspberry Pi Camera (9 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 73-81 ⏳</span></div>
+                <div class="section-title">Section 9: Web Server with Flask (4 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 82-85 ⏳</span></div>
+                <div class="section-title">Section 10: Final Project - Surveillance & Alarm System (9 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 86-94 ⏳</span></div>
+                <div class="section-title">Section 11: Conclusion (4 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 95-98 ⏳</span></div>
+                <div class="session-item"><span>Flash Raspberry Pi OS (headless setup)</span></div>
+                <div class="session-item"><span>SSH connection</span></div>
+                <div class="session-item"><span>VNC remote desktop</span></div>
+                <div class="session-item"><span>Network configuration</span></div>
+                <div class="session-item"><span>Raspberry Pi Connect</span></div>
+                <div class="session-item"><span>Variables and data types</span></div>
+                <div class="session-item"><span>Functions and scope</span></div>
+                <div class="session-item"><span>Conditions and operators</span></div>
+                <div class="session-item"><span>Loops and lists</span></div>
+                <div class="session-item"><span>Python modules</span></div>
+                <div class="session-item"><span>File I/O</span></div>
+                <div class="session-item"><span>Breadboard basics</span></div>
+                <div class="session-item"><span>Resistor color codes</span></div>
+                <div class="session-item"><span>LED circuits</span></div>
+                <div class="session-item"><span>Push buttons</span></div>
+                <div class="session-item"><span>GPIO pin control</span></div>
+                <div class="session-item"><span>Circuit safety</span></div>
+                <div class="session-item"><span>PIR motion sensor</span></div>
+                <div class="session-item"><span>Movement detection</span></div>
+                <div class="session-item"><span>Automatic lighting control</span></div>
+                <div class="session-item"><span>File system navigation</span></div>
+                <div class="session-item"><span>File manipulation (nano editor)</span></div>
+                <div class="session-item"><span>Software installation (apt)</span></div>
+                <div class="session-item"><span>Python from terminal</span></div>
+                <div class="session-item"><span>File I/O with Python</span></div>
+                <div class="session-item"><span>Send emails (yagmail)</span></div>
+                <div class="session-item"><span>Email attachments</span></div>
+                <div class="session-item"><span>Gmail integration</span></div>
+                <div class="session-item"><span>Camera setup</span></div>
+                <div class="session-item"><span>Take photos (terminal & Python)</span></div>
+                <div class="session-item"><span>Take videos (terminal & Python)</span></div>
+                <div class="session-item"><span>Series photography</span></div>
+                <div class="session-item"><span>Flask web server</span></div>
+                <div class="session-item"><span>GPIO control via web</span></div>
+                <div class="session-item"><span>Web-based LED control</span></div>
+                <div class="session-item"><span>Motion detection with PIR</span></div>
+                <div class="session-item"><span>Automatic photo capture</span></div>
+                <div class="session-item"><span>Email alerts with photos</span></div>
+                <div class="session-item"><span>Log file management</span></div>
+                <div class="session-item"><span>Web interface for monitoring</span></div>
+                <div class="session-item"><span>Auto-start on boot</span></div>
+                <div class="session-item"><span>**Mini Rover:** Raspberry Pi integration and GPIO control</span></div>
+                <div class="session-item"><span>**BeeHiveTom:** Sensor integration and data logging</span></div>
+                <div class="session-item"><span>**Home Automation:** GPIO control and web interfaces</span></div>
+                <div class="session-item"><span>**IoT Projects:** Email notifications and remote monitoring</span></div>
+                <div class="session-item"><span>**Embedded Linux Projects:** Foundation for complex systems</span></div>
+                <div class="session-item"><span>Raspberry Pi 5 (also works with Pi 4 and older)</span></div>
+                <div class="session-item"><span>Micro SD card</span></div>
+                <div class="session-item"><span>Breadboard</span></div>
+                <div class="session-item"><span>LEDs and resistors</span></div>
+                <div class="session-item"><span>Push buttons</span></div>
+                <div class="session-item"><span>PIR motion sensor</span></div>
+                <div class="session-item"><span>Raspberry Pi Camera</span></div>
+                <div class="session-item"><span>Jumper wires</span></div>
+                <div class="session-item"><span>No external monitor/keyboard required</span></div>
+                <div class="session-item"><span>Hands-on, step-by-step approach</span></div>
+                <div class="session-item"><span>No copy-paste - write all code from scratch</span></div>
+                <div class="session-item"><span>11 activities with solutions</span></div>
+                <div class="session-item"><span>Complete surveillance project</span></div>
+                <div class="session-item"><span>Beginner-friendly (no prerequisites)</span></div>
+                <div class="session-item"><span>Directly applicable to your CV projects (Mini Rover, BeeHiveTom)</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">ROS 2 Nav2 [Navigation 2 Stack] - with SLAM and Navigation</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Edouard Renard</span>
+                <span><strong>Platform:</strong> Udemy</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Section 1: Welcome (3 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 1-3 ⏳</span></div>
+                <div class="section-title">Section 2: Install and Setup (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 4-8 ⏳</span></div>
+                <div class="section-title">Section 3: SLAM - Mapping (6 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 9-14 ⏳</span></div>
+                <div class="section-title">Section 4: Navigation (7 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 15-21 ⏳</span></div>
+                <div class="section-title">Section 5: Nav2 Architecture & Concepts (6 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 22-27 ⏳</span></div>
+                <div class="section-title">Section 6: Custom Gazebo World (11 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 28-39 ⏳</span></div>
+                <div class="section-title">Section 7: Adapt Custom Robot for Nav2 (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 40-44 ⏳</span></div>
+                <div class="section-title">Section 8: Python Simple Commander API (7 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 45-51 ⏳</span></div>
+                <div class="section-title">Section 9: Conclusion (2 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 52-53 ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">ROS 2 Moveit 2 - Control a Robotic Arm</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Edouard Renard</span>
+                <span><strong>Platform:</strong> Udemy</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Section 1: Welcome (3 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 1-3 ⏳</span></div>
+                <div class="section-title">Section 2: Install and Setup (4 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 4-7 ⏳</span></div>
+                <div class="section-title">Section 3: Create URDF for 6-Axis Robotic Arm (8 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 8-15 ⏳</span></div>
+                <div class="section-title">Section 4: Configure Robot for MoveIt 2 (6 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 16-21 ⏳</span></div>
+                <div class="section-title">Section 5: Add Gripper to the Arm (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 22-26 ⏳</span></div>
+                <div class="section-title">Section 6: Bringup Package & Launch Files (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 27-31 ⏳</span></div>
+                <div class="section-title">Section 7: Control with MoveIt C++ API (10 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 32-41 ⏳</span></div>
+                <div class="section-title">Section 8: Control with MoveIt Python API (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 42-46 ⏳</span></div>
+                <div class="section-title">Section 9: Connect to Real Hardware (ros2_control) (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 47-51 ⏳</span></div>
+                <div class="section-title">Section 10: Conclusion (2 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 52-53 ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">ROS 2 - Hardware and ros2_control, Step by Step</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Edouard Renard</span>
+                <span><strong>Platform:</strong> Udemy</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Section 1: Welcome & Introduction (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 1-5 ⏳</span></div>
+                <div class="section-title">Section 2: ros2_control Setup (9 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 6-14 ⏳</span></div>
+                <div class="section-title">Section 3: Write a Hardware Driver (5 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 15-19 ⏳</span></div>
+                <div class="section-title">Section 4: Create a Hardware Interface (9 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 20-29 ⏳</span></div>
+                <div class="section-title">Section 5: Complete Project - Mobile Base + Robotic Arm (8 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 30-38 ⏳</span></div>
+                <div class="section-title">Section 6: Write a Custom Controller (6 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 39-44 ⏳</span></div>
+                <div class="section-title">Section 7: Conclusion (3 lectures) ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lectures 45-47 ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card in-progress">
+            <h2 class="course-title">LearnInDepth C++ Programming Course</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> LearnInDepth</span>
+                <span><strong>Platform:</strong> LearnInDepth (Private course)</span>
+                <span><span class="status-badge in-progress">🔄 IN PROGRESS - Completed through STL (Section 3)</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 33%; background-color: #f39c12;"></div>
+                <div class="progress-text">33%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Unit 1: Core C++ Language Concepts ✅ COMPLETED</div>
+                <div class="session-item"><span>Lesson 1: Intro to C++ ✅</span></div>
+                <div class="session-item"><span>Lesson 2: Functions in C++ ✅</span></div>
+                <div class="session-item"><span>Lesson 3 Part 1: Memory Management ✅</span></div>
+                <div class="session-item"><span>Lesson 3 Part 2: Memory Management ✅</span></div>
+                <div class="session-item"><span>Lesson 3 Part 3: Memory Management ✅</span></div>
+                <div class="session-item"><span>Lesson 4 Part 1: Working with References ✅</span></div>
+                <div class="session-item"><span>Lesson 4 Part 2: Working with References ✅</span></div>
+                <div class="session-item"><span>Lesson 4 Part 3: Working with References ✅</span></div>
+                <div class="session-item"><span>Lesson 5: Basics of Classes and Objects ✅</span></div>
+                <div class="section-title">Unit 2: Object Oriented Programming in C++ ✅ COMPLETED</div>
+                <div class="session-item"><span>Lesson 1: Constructors and Destructors ✅</span></div>
+                <div class="session-item"><span>Lesson 2: Inheritance ✅</span></div>
+                <div class="session-item"><span>Lesson 3: Static Members ✅</span></div>
+                <div class="session-item"><span>Lesson 4: Friend Functions and Classes ✅</span></div>
+                <div class="session-item"><span>Lesson 5: Abstract Classes & Interfaces ✅</span></div>
+                <div class="session-item"><span>Lesson 6: Polymorphism ✅</span></div>
+                <div class="section-title">Unit 3: Templates and STL Programming ✅ COMPLETED</div>
+                <div class="session-item"><span>Lesson 1: Function Templates ✅</span></div>
+                <div class="session-item"><span>Lesson 1 Part 1: Class Templates ✅</span></div>
+                <div class="session-item"><span>Lesson 1 Part 2: Class Templates ✅</span></div>
+                <div class="session-item"><span>Lesson 1 Part 3: Class Templates ✅</span></div>
+                <div class="session-item"><span>Lesson 2 Part 1: Power of STL ✅</span></div>
+                <div class="session-item"><span>Lesson 2 Part 2: Power of STL ✅</span></div>
+                <div class="session-item"><span>Lesson 2 Part 3: Power of STL ✅</span></div>
+                <div class="session-item"><span>Lesson 2 Part 4: Power of STL ✅</span></div>
+                <div class="session-item"><span>Lesson 3: Iterators and Algorithms ✅ **[CURRENT POSITION]**</span></div>
+                <div class="section-title">Unit 4: Data Structures in C++ ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Arrays ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: Constructors ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: Linked List ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: Linked List More Problems ⏳</span></div>
+                <div class="session-item"><span>Lesson 5: Linked List Data Science Use Case ⏳</span></div>
+                <div class="session-item"><span>Lesson 6: Stack ⏳</span></div>
+                <div class="session-item"><span>Lesson 7: Queue ⏳</span></div>
+                <div class="session-item"><span>Lesson 8: Templates ⏳</span></div>
+                <div class="session-item"><span>Lesson 9: STL ⏳</span></div>
+                <div class="session-item"><span>Lesson 10: BST (Binary Search Trees) ⏳</span></div>
+                <div class="session-item"><span>Lesson 11: Hash Tables ⏳</span></div>
+                <div class="section-title">Unit 5: Algorithms and Problem Solving ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Sorting ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: Balancing Trees ⏳</span></div>
+                <div class="session-item"><span>Section on Balancing Trees Part 1 ⏳</span></div>
+                <div class="session-item"><span>Section on Balancing Trees Part 2 ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: Dynamic Programming ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: Parallel Algorithms ⏳</span></div>
+                <div class="session-item"><span>Lesson 5: Greedy Algorithm ⏳</span></div>
+                <div class="session-item"><span>Lesson 6: Graphs ⏳</span></div>
+                <div class="section-title">Unit 6: Modern C++ ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Lambda Functions ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: Multi-threading ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: Multi-threading (Advanced) ⏳</span></div>
+                <div class="session-item"><span>Lesson 3 Part 1: Exception Handling ⏳</span></div>
+                <div class="session-item"><span>Lesson 3 Part 2: Exception Handling ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: Concepts ⏳</span></div>
+                <div class="section-title">Unit 7: C++ Software Engineering ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: SOLID Design Principles ⏳</span></div>
+                <div class="session-item"><span>Lesson 2 Part 1: Creational Design Patterns ⏳</span></div>
+                <div class="session-item"><span>Lesson 2 Part 2: Creational Design Patterns ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: Structural Design Patterns ⏳</span></div>
+                <div class="session-item"><span>Lesson 4: Behavioral Design Patterns ⏳</span></div>
+                <div class="section-title">Unit 8: Real-Time and Embedded Systems ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Embedded System Real-Time Apps ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: Linux Application with C++ ⏳</span></div>
+                <div class="section-title">Unit 9: Testing with Modern C++ ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Lesson 1: Intro to GTest Framework and CMake ⏳</span></div>
+                <div class="session-item"><span>Lesson 2: Stubbing and Mocking with Modern C++ ⏳</span></div>
+                <div class="session-item"><span>Lesson 3: Enhancing Coverage and Generating Reports ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card in-progress">
+            <h2 class="course-title">Fundamentals of TinyML</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> HarvardX</span>
+                <span><strong>Platform:</strong> edX</span>
+                <span><span class="status-badge in-progress">🔄 IN PROGRESS</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 31%; background-color: #f39c12;"></div>
+                <div class="progress-text">31%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Section 1: Welcome to TinyML 🔄 IN PROGRESS</div>
+                <div class="session-item"><span>About The Chapter ✅ COMPLETED</span></div>
+                <div class="session-item"><span>1.1 Course Overview ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.2 The Future of ML is Tiny and Bright ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.3 TinyML Challenges ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.3 TinyML Challenges TEST ✅ COMPLETED</span></div>
+                <div class="session-item"><span>1.4 Getting Started ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.4 Getting Started TEST ✅ COMPLETED</span></div>
+                <div class="section-title">Section 2: Introduction to (Tiny) ML 🔄 IN PROGRESS</div>
+                <div class="session-item"><span>About The Chapter ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>2.1 The Machine Learning Paradigm ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>2.2 The Building Blocks of Deep Learning ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>2.3 Exploring Machine Learning Scenarios ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>2.4 Building a Computer Vision Model ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>2.4 Building a Computer Vision Model TEST ✅ COMPLETED</span></div>
+                <div class="session-item"><span>2.5 Responsible AI Design ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>2.5 Responsible AI Design TEST ✅ COMPLETED</span></div>
+                <div class="session-item"><span>2.6 Summary ⏳ INCOMPLETE</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card in-progress">
+            <h2 class="course-title">Applications of TinyML</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> HarvardX</span>
+                <span><strong>Platform:</strong> edX</span>
+                <span><span class="status-badge in-progress">🔄 IN PROGRESS</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 42%; background-color: #f39c12;"></div>
+                <div class="progress-text">42%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Section 1: Applications of TinyML 🔄 IN PROGRESS</div>
+                <div class="session-item"><span>About the Chapter ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.1: Welcome to Applications of TinyML ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.2: AI Lifecycle and ML Workflow ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.2 Test ✅ COMPLETED</span></div>
+                <div class="session-item"><span>1.3: Machine Learning on Mobile and Edge IoT Devices ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.3 Test ✅ COMPLETED</span></div>
+                <div class="session-item"><span>1.4: Machine Learning on Mobile and Edge IoT Devices - Part 2 ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.4 Test ✅ COMPLETED</span></div>
+                <div class="session-item"><span>1.5: Keyword spotting ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.5 Test ✅ COMPLETED</span></div>
+                <div class="session-item"><span>1.6: Data Engineering for TinyML Applications ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.6 Test ✅ COMPLETED</span></div>
+                <div class="session-item"><span>1.7: Visual Wake Words ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.7 Test ✅ COMPLETED</span></div>
+                <div class="session-item"><span>1.8: Anomaly Detection ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.8 Test ✅ COMPLETED</span></div>
+                <div class="session-item"><span>1.9: Responsible AI Development ⏳ INCOMPLETE</span></div>
+                <div class="session-item"><span>1.9 Test ✅ COMPLETED</span></div>
+                <div class="session-item"><span>1.10: Summary ⏳ INCOMPLETE</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">Getting Started with Machine Learning at the Edge on Arm</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Arm Education</span>
+                <span><strong>Platform:</strong> Coursera</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Module 1: Introduction to Machine Learning ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Introduction to key concepts in ML</span></div>
+                <div class="session-item"><span>Business need for edge AI</span></div>
+                <div class="session-item"><span>3 videos, 2 readings, 3 assignments</span></div>
+                <div class="section-title">Module 2: ML for Signal Processing ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Feature extraction and classification models</span></div>
+                <div class="session-item"><span>Training and evaluation in ML workflow</span></div>
+                <div class="session-item"><span>Constraints for microcontrollers</span></div>
+                <div class="session-item"><span>Lab: Activity recognition using accelerometer data (Anaconda/Python)</span></div>
+                <div class="session-item"><span>7 videos, 1 reading, 7 assignments</span></div>
+                <div class="section-title">Module 3: Artificial Neural Networks ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Deep dive into ANN for classification</span></div>
+                <div class="session-item"><span>Model optimization (quantization) for microprocessors</span></div>
+                <div class="session-item"><span>Lab: Activity recognition using ANN on STM32 (TensorFlow)</span></div>
+                <div class="session-item"><span>6 videos, 1 reading, 5 assignments</span></div>
+                <div class="section-title">Module 4: Convolutional Neural Networks ⏳ NOT STARTED</div>
+                <div class="session-item"><span>CNN for image and audio processing</span></div>
+                <div class="session-item"><span>Cutting edge trends in ML</span></div>
+                <div class="session-item"><span>Lab: Audio processing with CNN (optimization for accuracy/performance)</span></div>
+                <div class="session-item"><span>5 videos, 1 reading, 5 assignments</span></div>
+                <div class="section-title">Module 5: Machine Learning at the Edge with Arm ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Using CMSIS-NN library for ML</span></div>
+                <div class="session-item"><span>Lab: CIFAR-10 model using CUBE AI</span></div>
+                <div class="session-item"><span>5 videos, 1 reading, 5 assignments</span></div>
+                <div class="section-title">Module 6: Neural Network Optimization ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Techniques to minimize memory footprint and operations</span></div>
+                <div class="session-item"><span>Fixed-point vs floating-point arithmetic</span></div>
+                <div class="session-item"><span>Lab: Best model for Arm Cortex-M (CMSIS-NN)</span></div>
+                <div class="session-item"><span>6 videos, 2 readings, 6 assignments</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">Computer Vision with Embedded Machine Learning</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Shawn Hymel</span>
+                <span><strong>Platform:</strong> Coursera / Edge Impulse</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="section-title">Module 1: Introduction to Computer Vision ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Digital images and neural networks for simple classification</span></div>
+                <div class="session-item"><span>Project: Train and deploy image classifier to embedded system</span></div>
+                <div class="session-item"><span>13 videos, 15 readings, 4 assignments</span></div>
+                <div class="section-title">Module 2: Convolutional Neural Networks ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Internal workings of CNNs (convolution, pooling)</span></div>
+                <div class="session-item"><span>Data augmentation and visualization techniques</span></div>
+                <div class="session-item"><span>Project: Train and deploy CNN to embedded system</span></div>
+                <div class="session-item"><span>9 videos, 13 readings, 5 assignments</span></div>
+                <div class="section-title">Module 3: Object Detection ⏳ NOT STARTED</div>
+                <div class="session-item"><span>Object detection vs image classification</span></div>
+                <div class="session-item"><span>Performance metrics and popular models</span></div>
+                <div class="session-item"><span>Project: Deploy object detection model to embedded system</span></div>
+                <div class="session-item"><span>10 videos, 12 readings, 3 assignments</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">C++ Compilation Stages</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Moatasem Elsayed</span>
+                <span><strong>Platform:</strong> YouTube</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="session-item"><span>01 Introduction To Compilation Stages for C++ Deeply ⏳</span></div>
+                <div class="session-item"><span>02 Lexer scanner ⏳</span></div>
+                <div class="session-item"><span>03 Parser ⏳</span></div>
+                <div class="session-item"><span>04 Semantic ⏳</span></div>
+                <div class="session-item"><span>05 IR Optimizer codegen ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">CPP Projects from Market</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Moatasem Elsayed</span>
+                <span><strong>Platform:</strong> YouTube</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="session-item"><span>01 introduction ⏳</span></div>
+                <div class="session-item"><span>02 circular buffer setup ⏳</span></div>
+                <div class="session-item"><span>03 circular buffer push back ⏳</span></div>
+                <div class="session-item"><span>04 circular buffer test push back ⏳</span></div>
+                <div class="session-item"><span>05 pop for circular buffer and unit test ⏳</span></div>
+                <div class="session-item"><span>06 initializer_list and google coverage ⏳</span></div>
+                <div class="session-item"><span>07 write custom iterator ⏳</span></div>
+                <div class="session-item"><span>08 custom iterator for circular buffer ⏳</span></div>
+                <div class="session-item"><span>09 custom iterator for circular buffer part 2 ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">Project Smart Door</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Moatasem Elsayed</span>
+                <span><strong>Platform:</strong> YouTube / PNJunction</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="session-item"><span>Promo Embedded Linux ⏳</span></div>
+                <div class="session-item"><span>Smart door EL devices driver i2c ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">Modern C++ Level 3</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Moatasem Elsayed</span>
+                <span><strong>Platform:</strong> YouTube / PNJunction</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="session-item"><span>Modern C++ Content #1 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ OOP #2 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ Class: What, Why, When #3 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ Modularity, Constructor, Destructor #4 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ Friend #5 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ Default Delete #6 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ const #7 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ Static #8 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ operator overloading part 1 #9 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ operator overloading part 2 #10 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ operator overloading part 3 #11 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ operator overloading part 4 #12 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ operator overloading part 5 #13 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ Delegation and overload constructor #14 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ Copy Constructor #15 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ Lvalue vs Rvalue #16 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ std::move #16 ⏳</span></div>
+                <div class="session-item"><span>Modern C++ move constructor #17 ⏳</span></div>
+                <div class="session-item"><span>07 write Custom iterator #18 ⏳</span></div>
+                <div class="session-item"><span>17 startup sequence for elf file #19 ⏳</span></div>
+                <div class="session-item"><span>18 startup sequence part 2 #20 ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">Mastering GDB</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Moatasem Elsayed</span>
+                <span><strong>Platform:</strong> YouTube / PNJunction</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="session-item"><span>Mastering gdb #1 ⏳</span></div>
+                <div class="session-item"><span>debug symbol table #2 ⏳</span></div>
+                <div class="session-item"><span>debug basic commands #3 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb break and print #4 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb watch -display #5 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb call #6 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb stack smash detect #7 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb segmentation fault #8 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb reverse #9 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb remote debugging on raspi #10 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb debug on process over rpi #11 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb file and commands #12 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb shell and python #13 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb arm #14 ⏳</span></div>
+                <div class="session-item"><span>mastering gdb coredump #15 ⏳</span></div>
+                <div class="session-item"><span>lazy binding using gdb #16 ⏳</span></div>
+                <div class="session-item"><span>#17 startup sequence for elf file ⏳</span></div>
+                <div class="session-item"><span>#18 startup sequence part 2 ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">Design Patterns with Embedded Systems</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Moatasem Elsayed</span>
+                <span><strong>Platform:</strong> YouTube / PNJunction</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="session-item"><span>Session 1 ⏳</span></div>
+                <div class="session-item"><span>Session 2 ⏳</span></div>
+                <div class="session-item"><span>Session 3 ⏳</span></div>
+                <div class="session-item"><span>Session 4 ⏳</span></div>
+                <div class="session-item"><span>Session 5 ⏳</span></div>
+                <div class="session-item"><span>Session 6 ⏳</span></div>
+                <div class="session-item"><span>Session 7 ⏳</span></div>
+                <div class="session-item"><span>Session 8 ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+        <div class="course-card not-started">
+            <h2 class="course-title">CMake</h2>
+            <div class="course-info">
+                <span><strong>Instructor:</strong> Moatasem Elsayed</span>
+                <span><strong>Platform:</strong> YouTube</span>
+                <span><span class="status-badge not-started">⏳ NOT STARTED</span></span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%; background-color: #e74c3c;"></div>
+                <div class="progress-text">0%</div>
+            </div>
+            
+            <details>
+                <summary style="cursor:pointer; font-weight:bold; padding: 10px 0; color: #2980b9; user-select: none;">📂 View Course Content</summary>
+                <div class="modules-list">
+                <div class="session-item"><span>CMake Basics #1 ⏳</span></div>
+                <div class="session-item"><span>CMake include_directories #2 ⏳</span></div>
+                <div class="session-item"><span>CMake message, set and if #3 ⏳</span></div>
+                <div class="session-item"><span>CMake add_library #4 ⏳</span></div>
+                <div class="session-item"><span>CMake Variables #5 ⏳</span></div>
+                <div class="session-item"><span>CMake configure_file #6 ⏳</span></div>
+                <div class="session-item"><span>CMake If, Foreach #7 ⏳</span></div>
+                <div class="session-item"><span>CMake Function, Cache #8 ⏳</span></div>
+                <div class="session-item"><span>CMake compile, install #9 ⏳</span></div>
+                <div class="session-item"><span>CMake file, string, execute process #10 ⏳</span></div>
+                <div class="session-item"><span>CMake Find package part 1 #11 ⏳</span></div>
+                <div class="session-item"><span>CMake Find_package part 2 #12 ⏳</span></div>
+                <div class="session-item"><span>CMake atmega32 part 1 #13 ⏳</span></div>
+                <div class="session-item"><span>CMake atmega32 part 2 #14 ⏳</span></div>
+                <div class="session-item"><span>CMake atmega32 part 3 #15 ⏳</span></div>
+                <div class="session-item"><span>CMake Quick start to Design Pattern #16 ⏳</span></div>
+                <div class="session-item"><span>CMake Raspberry Pi #17 ⏳</span></div>
+                <div class="session-item"><span>CMake Doxygen #18 ⏳</span></div>
+                <div class="session-item"><span>CMake ctest with googletest #19 ⏳</span></div>
+                <div class="session-item"><span>CMake list #20 ⏳</span></div>
+                <div class="session-item"><span>CMake pkg search module #21 ⏳</span></div>
+                <div class="session-item"><span>CMake Toolchain with cmake_module #22 ⏳</span></div>
+                <div class="session-item"><span>CMake create package #23 ⏳</span></div>
+
+                </div>
+            </details>
+        </div>
+
+    </div>
+</body>
+</html>
