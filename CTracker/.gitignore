@@ -1,0 +1,15 @@
+# CMake build artifacts
+build/
+bin/
+lib/
+*.user
+*.bak
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Executables
+*.exe
+*.out

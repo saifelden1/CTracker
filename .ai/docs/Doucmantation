@@ -1,0 +1,29 @@
+task1 
+Step 1 — We wrote main.cpp
+This is the only C++ code we wrote. It tells the app:
+
+Create a window
+Put a label in the center saying "CTracker Boilerplate Loaded!"
+Show the window and keep running
+Step 2 — We wrote CMakeLists.txt
+Think of this as the recipe card for your project. It doesn't contain any C++ code. It just tells CMake:
+
+"Hey, I need Qt 6 with Widgets and SQL support"
+"Take main.cpp and compile it into an app called CTracker.exe"
+"Use the MinGW C++ compiler from E:\qt\Tools\mingw1310_64"
+Step 3 — We ran cmake ..
+CMake read the recipe and generated all the Makefiles inside the build/ folder. These are files that tell the compiler exactly what to do, file by file. You never write these manually.
+
+Step 4 — We ran cmake --build .
+The compiler followed the Makefiles and turned your main.cpp into CTracker.exe. You saw this in the terminal:
+
+[66%] Building CXX object CMakeFiles/CTracker.dir/src/main.cpp.obj
+[100%] Linking CXX executable CTracker.exe
+[100%] Built target CTracker
+Step 5 — We ran windeployqt
+This is a special Qt tool that asks: "What DLL files does CTracker.exe need to run?" and then copies them all next to the .exe. Before this step, the .exe crashed because it couldn't find Qt6Core.dll. After this step, all the DLLs are sitting next to the .exe.
+
+To summarize the rule:
+
+You only ever write files in the root CTracker/ folder.
+The build/ folder is entirely managed by CMake. It can be deleted and regenerated anytime by running cmake .. again.

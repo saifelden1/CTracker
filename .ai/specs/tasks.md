@@ -13,143 +13,143 @@
 ## Phase 1: Project Initialization & Build System
 
 ### Task 1.1: Repository & Directory Structure
-- [ ] Create root project directory: `CTracker/`
-- [ ] Create `src/` directory for all source files
-- [ ] Create `include/` directory for all header files
-- [ ] Create `assets/styles/` directory for QSS files
-- [ ] Create `assets/icons/` directory for navigation icons
-- [ ] Create `tests/` directory for unit tests
-- [ ] Create `resources/` directory for Qt resource files (`.qrc`)
-- [ ] Create `.gitignore` with CMake build artifacts and OS files excluded
+- [x] Create root project directory: `CTracker/`
+- [x] Create `src/` directory for all source files
+- [x] Create `include/` directory for all header files
+- [x] Create `assets/styles/` directory for QSS files
+- [x] Create `assets/icons/` directory for navigation icons
+- [x] Create `tests/` directory for unit tests
+- [x] Create `resources/` directory for Qt resource files (`.qrc`)
+- [x] Create `.gitignore` with CMake build artifacts and OS files excluded
 
 ### Task 1.2: CMake Build System
-- [ ] Create root `CMakeLists.txt` with `cmake_minimum_required(VERSION 3.20)`
-- [ ] Set project name and `CMAKE_CXX_STANDARD 17`
-- [ ] Add `find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql)`
-- [ ] Define `SOURCES` variable listing all `.cpp` files
-- [ ] Define `HEADERS` variable listing all `.h` files
-- [ ] Add `qt_add_executable(CTracker ...)` target
-- [ ] Link Qt6::Core, Qt6::Widgets, Qt6::Sql to the target
-- [ ] Enable `CMAKE_AUTOMOC ON`, `CMAKE_AUTORCC ON`, `CMAKE_AUTOUIC ON`
-- [ ] Add a `tests/CMakeLists.txt` sublisting with GTest or QtTest
-- [ ] Create a `build/` directory and verify `cmake ..` runs without errors
+- [x] Create root `CMakeLists.txt` with `cmake_minimum_required(VERSION 3.20)`
+- [x] Set project name and `CMAKE_CXX_STANDARD 17`
+- [x] Add `find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql)`
+- [x] Define `SOURCES` variable listing all `.cpp` files
+- [x] Define `HEADERS` variable listing all `.h` files
+- [x] Add `qt_add_executable(CTracker ...)` target
+- [x] Link Qt6::Core, Qt6::Widgets, Qt6::Sql to the target
+- [x] Enable `CMAKE_AUTOMOC ON`, `CMAKE_AUTORCC ON`, `CMAKE_AUTOUIC ON`
+- [x] Add a `tests/CMakeLists.txt` sublisting with GTest or QtTest
+- [x] Create a `build/` directory and verify `cmake ..` runs without errors
 
 ### Task 1.3: Qt Resource File
-- [ ] Create `resources/resources.qrc`
-- [ ] Add QSS dark theme file path to `.qrc`
-- [ ] Add placeholder icon paths to `.qrc`
-- [ ] Include the `.qrc` in `CMakeLists.txt` via `qt_add_resources`
+- [x] Create `resources/resources.qrc`
+- [x] Add QSS dark theme file path to `.qrc`
+- [x] Add placeholder icon paths to `.qrc`
+- [x] Include the `.qrc` in `CMakeLists.txt` via `qt_add_resources`
 
 ---
 
 ## Phase 2: Database Layer (`DatabaseManager`)
 
 ### Task 2.1: Singleton Setup
-- [ ] Create `include/DatabaseManager.h`
-- [ ] Declare `DatabaseManager` as `QObject` singleton with `static instance()` method
-- [ ] Declare private constructor to prevent direct instantiation
-- [ ] Declare `bool initialize(const QString& dbPath = {})` method
-- [ ] Declare `bool isOpen() const` and `void close()` methods
-- [ ] Declare private `QSqlDatabase m_database` member
-- [ ] Create `src/DatabaseManager.cpp` and implement `instance()` with static pointer
-- [ ] Implement `initialize()`: open/create `ctracker.db` in the app data path
+- [x] Create `include/DatabaseManager.h`
+- [x] Declare `DatabaseManager` as `QObject` singleton with `static instance()` method
+- [x] Declare private constructor to prevent direct instantiation
+- [x] Declare `bool initialize(const QString& dbPath = {})` method
+- [x] Declare `bool isOpen() const` and `void close()` methods
+- [x] Declare private `QSqlDatabase m_database` member
+- [x] Create `src/DatabaseManager.cpp` and implement `instance()` with static pointer
+- [x] Implement `initialize()`: open/create `ctracker.db` in the app data path
 
 ### Task 2.2: Schema Creation
-- [ ] Implement private `bool createTables()` in `DatabaseManager`
-- [ ] Write `CREATE TABLE IF NOT EXISTS CoursesProjects` SQL with all columns
-- [ ] Write `CREATE TABLE IF NOT EXISTS Units` SQL with `FOREIGN KEY ... CASCADE DELETE`
-- [ ] Write `CREATE TABLE IF NOT EXISTS SessionsTasks` SQL with `CHECK(CurrentProgress BETWEEN 0 AND 100)`
-- [ ] Write `CREATE TABLE IF NOT EXISTS ActivityLog` SQL with `FOREIGN KEY ... CASCADE DELETE`
-- [ ] Enable SQLite foreign key support: `PRAGMA foreign_keys = ON`
-- [ ] Call `createTables()` inside `initialize()` after opening the DB
-- [ ] Test: Manually inspect the generated `.db` file with a SQLite viewer
+- [x] Implement private `bool createTables()` in `DatabaseManager`
+- [x] Write `CREATE TABLE IF NOT EXISTS CoursesProjects` SQL with all columns
+- [x] Write `CREATE TABLE IF NOT EXISTS Units` SQL with `FOREIGN KEY ... CASCADE DELETE`
+- [x] Write `CREATE TABLE IF NOT EXISTS SessionsTasks` SQL with `CHECK(CurrentProgress BETWEEN 0 AND 100)`
+- [x] Write `CREATE TABLE IF NOT EXISTS ActivityLog` SQL with `FOREIGN KEY ... CASCADE DELETE`
+- [x] Enable SQLite foreign key support: `PRAGMA foreign_keys = ON`
+- [x] Call `createTables()` inside `initialize()` after opening the DB
+- [x] Test: Manually inspect the generated `.db` file with a SQLite viewer
 
 ### Task 2.3: Query Helper Methods
-- [ ] Implement private `bool executeQuery(const QString& sql, const QVariantMap& params)` using `QSqlQuery`
-- [ ] Implement private `QList<QVariantMap> executeSelectQuery(const QString& sql, const QVariantMap& params)`
-- [ ] Use named placeholders (`:param`) in all queries to prevent SQL injection
-- [ ] Handle and emit `databaseError(const QString& error)` signal on failure
-- [ ] Implement `beginTransaction()`, `commitTransaction()`, `rollbackTransaction()` wrappers
+- [x] Implement private `bool executeQuery(const QString& sql, const QVariantMap& params)` using `QSqlQuery`
+- [x] Implement private `QList<QVariantMap> executeSelectQuery(const QString& sql, const QVariantMap& params)`
+- [x] Use named placeholders (`:param`) in all queries to prevent SQL injection
+- [x] Handle and emit `databaseError(const QString& error)` signal on failure
+- [x] Implement `beginTransaction()`, `commitTransaction()`, `rollbackTransaction()` wrappers
 
 ### Task 2.4: Entity (Course/Project) CRUD
-- [ ] Implement `int addCourse(const QString& name)` — returns new ID or -1 on failure
-- [ ] Implement `int addProject(const QString& name)` — returns new ID or -1 on failure
-- [ ] Implement `bool removeCourse(int courseId)` — CASCADE deletes Units/Sessions
-- [ ] Implement `bool removeProject(int projectId)` — CASCADE deletes Units/Sessions
-- [ ] Implement `bool renameCourse(int courseId, const QString& newName)`
-- [ ] Implement `bool renameProject(int projectId, const QString& newName)`
-- [ ] Implement `QList<EntityData> fetchAllCourses()`
-- [ ] Implement `QList<EntityData> fetchAllProjects()`
-- [ ] Implement `QList<EntityData> fetchAllEntities()` (courses + projects combined)
-- [ ] Emit `dataChanged()` signal at the end of each successful write operation
+- [x] Implement `int addCourse(const QString& name)` — returns new ID or -1 on failure
+- [x] Implement `int addProject(const QString& name)` — returns new ID or -1 on failure
+- [x] Implement `bool removeCourse(int courseId)` — CASCADE deletes Units/Sessions
+- [x] Implement `bool removeProject(int projectId)` — CASCADE deletes Units/Sessions
+- [x] Implement `bool renameCourse(int courseId, const QString& newName)`
+- [x] Implement `bool renameProject(int projectId, const QString& newName)`
+- [x] Implement `QList<EntityData> fetchAllCourses()`
+- [x] Implement `QList<EntityData> fetchAllProjects()`
+- [x] Implement `QList<EntityData> fetchAllEntities()` (courses + projects combined)
+- [x] Emit `dataChanged()` signal at the end of each successful write operation
 
 ### Task 2.5: Unit CRUD
-- [ ] Implement `int addUnit(int parentId, const QString& name)`
-- [ ] Implement `bool removeUnit(int unitId)` — CASCADE deletes Sessions/Tasks
-- [ ] Implement `bool renameUnit(int unitId, const QString& newName)`
-- [ ] Implement `QList<UnitData> getUnitsForParent(int parentId)`
+- [x] Implement `int addUnit(int parentId, const QString& name)`
+- [x] Implement `bool removeUnit(int unitId)` — CASCADE deletes Sessions/Tasks
+- [x] Implement `bool renameUnit(int unitId, const QString& newName)`
+- [x] Implement `QList<UnitData> getUnitsForParent(int parentId)`
 
 ### Task 2.6: Session/Task CRUD
-- [ ] Implement `int addSessionTask(int unitId, const QString& name, int progress = 0)`
-- [ ] Implement `bool removeSessionTask(int sessionId)`
-- [ ] Implement `bool renameSessionTask(int sessionId, const QString& newName)`
-- [ ] Implement `bool updateSessionTaskProgress(int sessionId, int progress)` inside a transaction
-- [ ] Implement `int getSessionTaskProgress(int sessionId)` helper
-- [ ] Implement `QList<SessionTaskData> getSessionTasksForUnit(int unitId)`
+- [x] Implement `int addSessionTask(int unitId, const QString& name, int progress = 0)`
+- [x] Implement `bool removeSessionTask(int sessionId)`
+- [x] Implement `bool renameSessionTask(int sessionId, const QString& newName)`
+- [x] Implement `bool updateSessionTaskProgress(int sessionId, int progress)` inside a transaction
+- [x] Implement `int getSessionTaskProgress(int sessionId)` helper
+- [x] Implement `QList<SessionTaskData> getSessionTasksForUnit(int unitId)`
 
 ### Task 2.7: Activity Log Operations
-- [ ] Implement `int logActivity(int itemId, int oldVal, int newVal, const QString& type, const QDateTime& ts)`
-- [ ] Guard: if `oldVal == newVal`, do NOT insert — return -1
-- [ ] Calculate and store `ProgressDelta = ABS(newVal - oldVal)` in the INSERT
-- [ ] Implement `QList<ActivityLogEntry> getActivityLog(const QDate& from, const QDate& to)`
-- [ ] Implement `QList<ActivityLogEntry> getActivityLogForItem(int itemId)`
+- [x] Implement `int logActivity(int itemId, int oldVal, int newVal, const QString& type, const QDateTime& ts)`
+- [x] Guard: if `oldVal == newVal`, do NOT insert — return -1
+- [x] Calculate and store `ProgressDelta = ABS(newVal - oldVal)` in the INSERT
+- [x] Implement `QList<ActivityLogEntry> getActivityLog(const QDate& from, const QDate& to)`
+- [x] Implement `QList<ActivityLogEntry> getActivityLogForItem(int itemId)`
 
 ---
 
 ## Phase 3: Data Structures
 
 ### Task 3.1: Define Shared Data Structs
-- [ ] Create `include/DataStructures.h`
-- [ ] Define `struct EntityData { int id; QString name; QString type; int overallProgress; }`
-- [ ] Define `struct UnitData { int id; int parentId; QString name; }`
-- [ ] Define `struct SessionTaskData { int id; int unitId; QString name; int progress; }`
-- [ ] Define `struct ActivityLogEntry { int id; int itemId; QDateTime timestamp; int progressDelta; int oldValue; int newValue; QString type; }`
-- [ ] Define `struct HeatmapDataPoint { QDate date; int totalProgress; int activityCount; int intensityLevel; }`
+- [x] Create `include/DataStructures.h`
+- [x] Define `struct EntityData { int id; QString name; QString type; int overallProgress; }`
+- [x] Define `struct UnitData { int id; int parentId; QString name; }`
+- [x] Define `struct SessionTaskData { int id; int unitId; QString name; int progress; }`
+- [x] Define `struct ActivityLogEntry { int id; int itemId; QDateTime timestamp; int progressDelta; int oldValue; int newValue; QString type; }`
+- [x] Define `struct HeatmapDataPoint { QDate date; int totalProgress; int activityCount; int intensityLevel; }`
 
 ---
 
 ## Phase 4: Models
 
 ### Task 4.1: ActivityLogModel
-- [ ] Create `include/ActivityLogModel.h` inheriting `QAbstractTableModel`
-- [ ] Declare columns: `TimestampCol`, `ItemNameCol`, `TypeCol`, `ProgressChangeCol`
-- [ ] Implement `rowCount()`, `columnCount()`, `data()`, `headerData()` overrides
-- [ ] Implement `setFilterDateRange(from, to)` and `setFilterItemType(type)`
-- [ ] Implement `clearFilters()` and `refresh()`
-- [ ] Implement `QMap<QDate, int> getDailyProgressTotals(from, to)`
-- [ ] Implement `QMap<QDate, int> getDailyActivityCounts(from, to)`
+- [x] Create `include/ActivityLogModel.h` inheriting `QAbstractTableModel`
+- [x] Declare columns: `TimestampCol`, `ItemNameCol`, `TypeCol`, `ProgressChangeCol`
+- [x] Implement `rowCount()`, `columnCount()`, `data()`, `headerData()` overrides
+- [x] Implement `setFilterDateRange(from, to)` and `setFilterItemType(type)`
+- [x] Implement `clearFilters()` and `refresh()`
+- [x] Implement `QMap<QDate, int> getDailyProgressTotals(from, to)`
+- [x] Implement `QMap<QDate, int> getDailyActivityCounts(from, to)`
 
 ### Task 4.2: JSON Data Importer
-- [ ] Create `include/DataImporter.h` and `src/DataImporter.cpp`
-- [ ] Implement `bool importFromFile(const QString& filePath)`
-- [ ] Validate: file opens, is valid JSON, is a JSON object
-- [ ] Validate: `version`, `type`, `name`, and `units` fields exist
-- [ ] Validate: `type` is `"course"` or `"project"` — error otherwise
-- [ ] Wrap entire import in a single DB transaction (atomic)
-- [ ] For each unit, call `addUnit()`; for each session, call `addSessionTask()`
-- [ ] Clamp all `progress` values to [0, 100]
-- [ ] Log warnings for invalid entries but continue importing valid ones
-- [ ] Emit `importCompleted(int entityId)` signal on success
+- [x] Create `include/DataImporter.h` and `src/DataImporter.cpp`
+- [x] Implement `bool importFromFile(const QString& filePath)`
+- [x] Validate: file opens, is valid JSON, is a JSON object
+- [x] Validate: `version`, `type`, `name`, and `units` fields exist
+- [x] Validate: `type` is `"course"` or `"project"` — error otherwise
+- [x] Wrap entire import in a single DB transaction (atomic)
+- [x] For each unit, call `addUnit()`; for each session, call `addSessionTask()`
+- [x] Clamp all `progress` values to [0, 100]
+- [x] Log warnings for invalid entries but continue importing valid ones
+- [x] Emit `importCompleted(int entityId)` signal on success
 
 ### Task 4.3: JSON Data Exporter
-- [ ] Create `include/DataExporter.h` and `src/DataExporter.cpp`
-- [ ] Implement `bool exportToFile(const QString& filePath)`
-- [ ] Fetch all entities from `DatabaseManager`
-- [ ] For each entity: build `QJsonObject` with `version`, `type`, `name`, `units`
-- [ ] For each unit: build nested `QJsonObject` with `name` and `sessions` array
-- [ ] For each session: build `QJsonObject` with `name` and `progress`
-- [ ] Write `QJsonDocument` to file with UTF-8 encoding
-- [ ] Return `false` and display error if file cannot be opened for writing
+- [x] Create `include/DataExporter.h` and `src/DataExporter.cpp`
+- [x] Implement `bool exportToFile(const QString& filePath)`
+- [x] Fetch all entities from `DatabaseManager`
+- [x] For each entity: build `QJsonObject` with `version`, `type`, `name`, `units`
+- [x] For each unit: build nested `QJsonObject` with `name` and `sessions` array
+- [x] For each session: build `QJsonObject` with `name` and `progress`
+- [x] Write `QJsonDocument` to file with UTF-8 encoding
+- [x] Return `false` and display error if file cannot be opened for writing
 
 ---
 
@@ -327,10 +327,3 @@
 - [ ] Test `CircularProgressBar::setProgress(-1)` clamps to 0
 - [ ] Test `CircularProgressBar::setProgress(150)` clamps to 100
 - [ ] Test `UnitExpandableWidget::calculateOverallProgress()` returns 0 with no children
-
----
-
-## Phase 10: Advanced Features
-
-- [ ] **Deadlines & Priorities:** Add `DueDate` and `Priority` columns to `Units`; add color-coded visual warnings (orange = approaching, red = overdue)
-- [ ] **PDF/Markdown Export:** Generate a structured Markdown report of all courses/projects with their progress
