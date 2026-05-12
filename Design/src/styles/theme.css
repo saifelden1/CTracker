@@ -1,0 +1,289 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* CTracker Design System - Dark Industrial Theme */
+
+  /* Typography */
+  --font-size: 14px;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --font-weight-semibold: 600;
+
+  /* Spacing System */
+  --space-xs: 0.25rem;    /* 4px */
+  --space-sm: 0.5rem;     /* 8px */
+  --space-md: 1rem;       /* 16px */
+  --space-lg: 1.5rem;     /* 24px */
+  --space-xl: 2rem;       /* 32px */
+  --space-2xl: 3rem;      /* 48px */
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.375rem;  /* 6px */
+  --radius-lg: 0.5rem;    /* 8px */
+  --radius-xl: 0.75rem;   /* 12px */
+  --radius: var(--radius-md);
+
+  /* Core Colors - Dark Industrial Palette */
+  --background: #1a1d24;           /* Dark gray background */
+  --background-elevated: #1f2229;  /* Slightly lighter for cards */
+  --surface: #252932;              /* Surface elements */
+  --surface-hover: #2d323d;        /* Hover states */
+
+  /* Text Colors */
+  --foreground: #e4e6eb;           /* Primary text - high contrast */
+  --foreground-muted: #9ca3af;     /* Secondary text */
+  --foreground-subtle: #6b7280;    /* Tertiary text */
+
+  /* Green Accent - Progress & Analytics */
+  --primary: #10b981;              /* Main green accent */
+  --primary-hover: #059669;        /* Darker green for hover */
+  --primary-foreground: #ffffff;   /* Text on green */
+  --primary-muted: #064e3b;        /* Dark green background */
+
+  /* Neutral Accents */
+  --secondary: #374151;            /* Secondary buttons/elements */
+  --secondary-hover: #4b5563;      /* Hover state */
+  --secondary-foreground: #e4e6eb;
+
+  /* Borders & Dividers */
+  --border: #2d323d;               /* Subtle borders */
+  --border-strong: #404854;        /* More visible borders */
+
+  /* Input Fields */
+  --input: #2d323d;
+  --input-background: #1f2229;
+  --input-border: #404854;
+  --input-focus: var(--primary);
+
+  /* Cards */
+  --card: #1f2229;
+  --card-foreground: #e4e6eb;
+  --card-border: #2d323d;
+
+  /* Popovers & Modals */
+  --popover: #252932;
+  --popover-foreground: #e4e6eb;
+  --popover-border: #404854;
+
+  /* Sidebar */
+  --sidebar: #16181d;              /* Darker than main background */
+  --sidebar-foreground: #e4e6eb;
+  --sidebar-accent: #252932;
+  --sidebar-accent-foreground: #e4e6eb;
+  --sidebar-border: #2d323d;
+  --sidebar-active: var(--primary-muted);
+  --sidebar-active-foreground: var(--primary);
+
+  /* States */
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
+  --accent: #252932;
+  --accent-foreground: #e4e6eb;
+
+  /* Destructive */
+  --destructive: #ef4444;
+  --destructive-hover: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  /* Focus Ring */
+  --ring: var(--primary);
+  --ring-offset: #1a1d24;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+
+  /* Chart Colors */
+  --chart-1: var(--primary);       /* Green */
+  --chart-2: #3b82f6;              /* Blue */
+  --chart-3: #8b5cf6;              /* Purple */
+  --chart-4: #f59e0b;              /* Amber */
+  --chart-5: #ec4899;              /* Pink */
+
+  /* Badge Colors */
+  --badge-success: #10b981;
+  --badge-success-bg: #064e3b;
+  --badge-warning: #f59e0b;
+  --badge-warning-bg: #451a03;
+  --badge-error: #ef4444;
+  --badge-error-bg: #450a0a;
+  --badge-info: #3b82f6;
+  --badge-info-bg: #172554;
+
+  /* Switch */
+  --switch-background: #374151;
+}
+
+@theme inline {
+  /* Tailwind Color Mappings */
+  --color-background: var(--background);
+  --color-background-elevated: var(--background-elevated);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-muted: var(--primary-muted);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-card-border: var(--card-border);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover-border: var(--popover-border);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-input-border: var(--input-border);
+  --color-input-focus: var(--input-focus);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-ring: var(--ring);
+  --color-ring-offset: var(--ring-offset);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-badge-success: var(--badge-success);
+  --color-badge-success-bg: var(--badge-success-bg);
+  --color-badge-warning: var(--badge-warning);
+  --color-badge-warning-bg: var(--badge-warning-bg);
+  --color-badge-error: var(--badge-error);
+  --color-badge-error-bg: var(--badge-error-bg);
+  --color-badge-info: var(--badge-info);
+  --color-badge-info-bg: var(--badge-info-bg);
+
+  --color-switch-background: var(--switch-background);
+
+  /* Radius */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  /* Shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /**
+  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
+  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
+  */
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+
+  /* Accordion animations */
+  @keyframes slideDown {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  .animate-slideDown {
+    animation: slideDown 300ms cubic-bezier(0.87, 0, 0.13, 1);
+  }
+
+  .animate-slideUp {
+    animation: slideUp 300ms cubic-bezier(0.87, 0, 0.13, 1);
+  }
+}
