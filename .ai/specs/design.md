@@ -1,8 +1,34 @@
 # Design Document: CTracker
 
+> **Versioning note**: This document describes the *full* v2 design. The implementation plan (`tasks.md`) is now a single linear sequence (no v1 → v2 split); the "Expansion" sub-sections in this document are retained for historical context but are no longer treated as a separate phase.
+>
+> **Source-tree convention (added with the merged plan)**: implementation files live under feature-grouped folders. `include/` and `src/` each contain `core/`, `shared/`, `courses/`, `projects/`, `todos/`, `pomodoro/`, `analytics/`, `calendar/`, `settings/`. Rule: *one folder per top-level feature; `core/` for the data layer; `shared/` for cross-feature widgets and chrome*. Cross-folder references use the form `#include "feature/Foo.h"` from the single include root.
+>
+> **Component-to-folder map**:
+> - `core/` — DatabaseManager, DataStructures, DataImporter, DataExporter
+> - `shared/` — MainWindow, SideNavigationBar, HomeDashboard, CircularProgressBar, StatsCard, CategoryPill, CategoryModel, EntityCreateDialog
+> - `courses/` — CoursesView, CourseDetailView, EntityCard, UnitExpandableWidget, SessionTaskRow, CoursesFilterBar
+> - `projects/` — ProjectsView, ProjectDetailView, ProjectCard
+> - `todos/` — TodoView, TodoRow, TodoModel
+> - `pomodoro/` — PomodoroView, PomodoroTimerWidget
+> - `analytics/` — AnalyticsView, ContributionHeatmap, ActivityLogModel, HeatmapAggregator
+> - `calendar/` — CalendarWidget, DayDetailsPanel
+> - `settings/` — SettingsView
+>
+> **Implementation Constraint (non-negotiable)**: The `design/` folder (React + TypeScript + Tailwind + Radix + Recharts) is a **visual and interaction reference only**. Every widget, view, chart, and behavior described in this document is implemented in **Qt 6 + C++17 + QSS**:
+> - React components → custom `QWidget` / `QFrame` subclasses
+> - JSX layouts → `QHBoxLayout` / `QVBoxLayout` / `QGridLayout`
+> - Tailwind utility classes → handwritten QSS rules in `assets/styles/dark-industrial.qss`
+> - Radix UI primitives → native Qt equivalents (`QMenu`, `QToolTip`, `QDialog`, `QComboBox`, etc.)
+> - Recharts → `Qt6::Charts` (`QLineSeries`, `QBarSeries`, `QPieSeries`, `QChartView`)
+> - Lucide React icons → SVG assets rendered via `Qt6::Svg`
+> - React state hooks → member variables wired with `connect()` signal/slot calls
+>
+> No React, TypeScript, Tailwind, shadcn/ui, Radix, or Recharts code is ported, embedded, executed, or shipped. The React prototype is never built into the Qt binary; it only informs design decisions during translation. Plugin-generated `.cpp`/`.h` output, if any, is treated as reference material in `design/` and not pasted into `src/`.
+
 ## Overview
 
-CTracker is a high-performance, offline Engineering Course & Project Management Suite built with C++17 and Qt 6. It provides a hierarchical tracking system for courses and projects, featuring custom-drawn circular progress indicators, a GitHub-style contribution heatmap for analytics, and automatic time-series activity logging. The application follows strict Model-View separation, uses SQLite for persistence, and implements a dark industrial theme through QSS styling.
+CTracker is a high-performance, offline Engineering Course & Project Management Suite built with C++17 and Qt 6. It provides a hierarchical tracking system for courses and projects, featuring custom-drawn circular progress indicators, a GitHub-style contribution heatmap for analytics, automatic time-series activity logging, an integrated to-do list, a Pomodoro focus timer, an interactive calendar with per-day notes, course categorization with color tagging, and analytics charts (line/bar/pie/streaks). The application follows strict Model-View separation, uses SQLite for persistence, and implements a dark industrial theme through QSS styling. The canonical visual specification is the React prototype under `design/`.
 
 ## Architecture
 
@@ -722,14 +748,20 @@ struct ActivityLogSchema {
 ### In-Memory Data Models
 
 ```cpp
-// Entity data for courses and projects
+// Entity data for courses and projects (extended for v2)
 struct EntityData {
     int id;
     QString name;
-    QString type;  // "Course" or "Project"
+    QString type;          // "Course" or "Project"
     QDateTime createdAt;
     int overallProgress;
     QList<UnitData> units;
+
+    // v2 additions — populated by LEFT JOIN to Categories
+    int categoryId = -1;       // -1 = no category assigned
+    QString status = "active"; // "active" | "paused" | "completed"
+    QString categoryName;      // empty when categoryId == -1
+    QColor categoryColor;      // invalid() when categoryId == -1
 };
 
 // Complete hierarchy data
@@ -1661,3 +1693,709 @@ Integration tests will verify:
 *For any* heatmap cell hover, the displayed tooltip SHALL show the correct date and total progress for that day.
 
 **Validates: Requirements 9.4**
+
+---
+
+# Expansion: Phase 5+ — Categories, Todos, Pomodoro, Calendar, Rich Projects, Analytics Charts
+
+This expansion brings the data model and component graph in line with the React prototype under `design/`. Earlier sections remain authoritative for the database core, activity log, JSON import/export, and base custom widgets.
+
+## Updated Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph UI Layer
+        MainWindow[MainWindow 1280x800 min]
+        SideNav[SideNavigationBar 256px]
+        Stack[QStackedWidget]
+        Home[HomeDashboard]
+        Courses[CoursesView]
+        Projects[ProjectsView]
+        Todo[TodoView]
+        Pomodoro[PomodoroView]
+        Analytics[AnalyticsView]
+        Settings[SettingsView]
+        CourseDetail[CourseDetailView]
+        ProjectDetail[ProjectDetailView]
+    end
+
+    subgraph Widgets
+        Circular[CircularProgressBar]
+        Heatmap[ContributionHeatmap]
+        Calendar[CalendarWidget]
+        DayDetails[DayDetailsPanel]
+        EntityCard[EntityCard + CategoryPill]
+        ProjectCard[ProjectCard]
+        StatsCard[StatsCard]
+        TodoRow[TodoRow]
+        PomodoroTimer[PomodoroTimerWidget]
+        UnitWidget[UnitExpandableWidget]
+        SessionRow[SessionTaskRow]
+    end
+
+    subgraph Models
+        EntityModel[CourseProjectModel]
+        ActivityModel[ActivityLogModel]
+        TodoModel[TodoModel]
+        PomodoroModel[PomodoroModel]
+        CategoryModel[CategoryModel]
+        CalendarModel[CalendarDayDetailsModel]
+        SettingsModel[SettingsModel]
+        HeatmapAgg[HeatmapAggregator]
+    end
+
+    subgraph Data
+        DB[DatabaseManager]
+        Importer[DataImporter]
+        Exporter[DataExporter]
+    end
+
+    SQLite[(SQLite)]
+
+    MainWindow --> SideNav
+    MainWindow --> Stack
+    Stack --> Home & Courses & Projects & Todo & Pomodoro & Analytics & Settings & CourseDetail & ProjectDetail
+
+    Home --> StatsCard & Calendar & DayDetails & Heatmap
+    Courses --> EntityCard
+    Projects --> ProjectCard
+    EntityCard --> Circular
+    Todo --> TodoRow
+    Pomodoro --> PomodoroTimer
+    Pomodoro --> Circular
+    CourseDetail --> UnitWidget --> SessionRow
+
+    EntityModel & ActivityModel & TodoModel & PomodoroModel & CategoryModel & CalendarModel & SettingsModel --> DB
+    HeatmapAgg --> ActivityModel & TodoModel & PomodoroModel
+    DB --> SQLite
+    Importer --> DB
+    DB --> Exporter
+```
+
+## Expansion: Database Schema
+
+New tables introduced by Phase 5+. All use `CREATE TABLE IF NOT EXISTS`. The schema is versioned via a `SchemaInfo` table; the expansion increments `schema_version` from 1 to 2.
+
+```sql
+-- Schema versioning
+CREATE TABLE IF NOT EXISTS SchemaInfo (
+    Key TEXT PRIMARY KEY,
+    Value TEXT NOT NULL
+);
+-- Initialised with: ('schema_version', '2')
+
+-- Categories: user-defined tags with colors
+CREATE TABLE IF NOT EXISTS Categories (
+    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Name TEXT NOT NULL UNIQUE,
+    Color TEXT NOT NULL,            -- 7-char hex, e.g. "#10b981"
+    CreatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add optional categoryId + status to existing CoursesProjects
+-- (migration step from schema_version 1 -> 2)
+ALTER TABLE CoursesProjects ADD COLUMN CategoryID INTEGER NULL
+    REFERENCES Categories(ID) ON DELETE SET NULL;
+ALTER TABLE CoursesProjects ADD COLUMN Status TEXT NOT NULL DEFAULT 'active'
+    CHECK(Status IN ('active', 'paused', 'completed'));
+
+-- Project-specific metadata (1:1 with CoursesProjects where Type='Project')
+CREATE TABLE IF NOT EXISTS ProjectMeta (
+    ProjectID INTEGER PRIMARY KEY,
+    Description TEXT NOT NULL DEFAULT '',
+    Priority TEXT NOT NULL DEFAULT 'medium' CHECK(Priority IN ('high', 'medium', 'low')),
+    Deadline TEXT,                       -- ISO 8601 date or NULL
+    TeamJson TEXT NOT NULL DEFAULT '[]', -- JSON array of strings
+    LinksJson TEXT NOT NULL DEFAULT '[]',-- JSON array of {label,url}
+    FOREIGN KEY (ProjectID) REFERENCES CoursesProjects(ID) ON DELETE CASCADE
+);
+
+-- Standalone todos
+CREATE TABLE IF NOT EXISTS Todos (
+    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Title TEXT NOT NULL,
+    Completed INTEGER NOT NULL DEFAULT 0,            -- 0/1
+    Priority TEXT NOT NULL DEFAULT 'medium' CHECK(Priority IN ('high', 'medium', 'low')),
+    CreatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CompletedAt TEXT
+);
+
+-- Pomodoro sessions (immutable history)
+CREATE TABLE IF NOT EXISTS PomodoroSessions (
+    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    CourseID INTEGER,                                -- nullable; references CoursesProjects(ID)
+    DurationMinutes INTEGER NOT NULL,
+    CompletedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    Mode TEXT NOT NULL DEFAULT 'work' CHECK(Mode IN ('work', 'break')),
+    FOREIGN KEY (CourseID) REFERENCES CoursesProjects(ID) ON DELETE SET NULL
+);
+
+-- Calendar day details (one row per used date)
+CREATE TABLE IF NOT EXISTS CalendarDayDetails (
+    Date TEXT PRIMARY KEY,                            -- ISO date "YYYY-MM-DD"
+    TodoJson TEXT NOT NULL DEFAULT '[]',
+    CompletedJson TEXT NOT NULL DEFAULT '[]',
+    Notes TEXT NOT NULL DEFAULT ''
+);
+
+-- App settings (key/value)
+CREATE TABLE IF NOT EXISTS Settings (
+    Key TEXT PRIMARY KEY,
+    Value TEXT NOT NULL
+);
+-- Seeded keys:
+--   profile.name, profile.email, profile.goals
+--   pomodoro.workMinutes (default '25'), pomodoro.breakMinutes ('5')
+--   notifications.enabled ('1'), sound.enabled ('1')
+--   courses.autoPauseDays ('30' | 'never')
+
+-- Indexes for analytics queries
+CREATE INDEX IF NOT EXISTS idx_activitylog_date ON ActivityLog(Timestamp);
+CREATE INDEX IF NOT EXISTS idx_pomodoro_date ON PomodoroSessions(CompletedAt);
+CREATE INDEX IF NOT EXISTS idx_todos_completed ON Todos(Completed, CompletedAt);
+```
+
+## Expansion: New Data Structures
+
+```cpp
+struct CategoryData {
+    int id;
+    QString name;
+    QColor color;
+    int entityCount;       // populated by joins
+};
+
+struct ProjectMetaData {
+    int projectId;
+    QString description;
+    QString priority;      // "high" | "medium" | "low"
+    QDate deadline;        // invalid() if unset
+    QStringList team;
+    struct Link { QString label; QString url; };
+    QList<Link> links;
+};
+
+struct TodoData {
+    int id;
+    QString title;
+    bool completed;
+    QString priority;
+    QDateTime createdAt;
+    QDateTime completedAt;
+};
+
+struct PomodoroSessionData {
+    int id;
+    int courseId;          // -1 if none
+    QString courseName;    // resolved on read
+    int durationMinutes;
+    QDateTime completedAt;
+    QString mode;          // "work" | "break"
+};
+
+struct CalendarDayData {
+    QDate date;
+    QStringList todo;
+    QStringList completed;
+    QString notes;
+    bool hasContent() const;
+};
+
+struct AnalyticsSummary {
+    int currentStreakDays;
+    int longestStreakDays;
+    int monthHoursStudied;
+    double avgSessionsPerDay7d;
+    double weekOverWeekPct;
+};
+
+// --- Filter / state structs (gap-fill, see tasks.md Task 3.4) ---
+
+// Promoted out of CoursesFilterBar so models and views can share it.
+struct CourseFilter {
+    QString search;
+    int categoryId = -1;       // -1 = all
+    QString status = "all";    // "all" | "active" | "paused"
+};
+
+struct ProjectFilter {
+    QString search;
+    QString priority = "all";  // "all" | "high" | "medium" | "low"
+    QString status = "all";    // "all" | "active" | "paused" | "completed"
+};
+
+// Persisted Pomodoro state — survives navigation and app restarts.
+// Stored as reserved keys under the Settings table: pomodoro.state.*
+struct PomodoroTimerState {
+    enum Mode { Work, Break };
+    enum State { Idle, Running, Paused };
+    Mode mode = Work;
+    State state = Idle;
+    int courseId = -1;
+    int totalSeconds = 25 * 60;
+    int remainingSeconds = 25 * 60;
+    QDateTime startedAt;       // invalid() when state == Idle
+};
+
+// Typed wrappers over the Settings k/v table, consumed by SettingsView.
+struct ProfileData {
+    QString name;
+    QString email;
+    QString goals;
+};
+
+struct PreferencesData {
+    int workMinutes;
+    int breakMinutes;
+    bool notifications;
+    bool sound;
+    int autoPauseDays;         // 0 = never
+};
+```
+
+## Expansion: New Component Interfaces
+
+### StatsCard
+
+```cpp
+class StatsCard : public QFrame {
+    Q_OBJECT
+public:
+    explicit StatsCard(const QString& title, QWidget* parent = nullptr);
+    void setValue(const QString& value);              // large number
+    void setSubtitle(const QString& subtitle);        // "Active courses average"
+    void setBadgeText(const QString& text);           // optional, e.g. "2 paused"
+    void setIcon(const QIcon& icon);
+};
+```
+
+### CategoryPill
+
+```cpp
+class CategoryPill : public QWidget {
+    Q_OBJECT
+public:
+    explicit CategoryPill(QWidget* parent = nullptr);
+    void setCategory(const CategoryData& c);          // colored dot + name; semi-transparent bg
+    void clearCategory();
+};
+```
+
+### CalendarWidget
+
+```cpp
+class CalendarWidget : public QWidget {
+    Q_OBJECT
+public:
+    explicit CalendarWidget(QWidget* parent = nullptr);
+    void setSelectedDate(const QDate& date);
+    QDate selectedDate() const;
+    void setIndicatorDates(const QSet<QDate>& dates); // dots under days with content
+signals:
+    void dateClicked(const QDate& date);
+    void monthChanged(int year, int month);
+protected:
+    void paintEvent(QPaintEvent*) override;
+    void mousePressEvent(QMouseEvent*) override;
+};
+```
+
+### DayDetailsPanel
+
+```cpp
+class DayDetailsPanel : public QWidget {
+    Q_OBJECT
+public:
+    explicit DayDetailsPanel(QWidget* parent = nullptr);
+    void showDay(const CalendarDayData& data);
+    void clear();                                     // empty state
+signals:
+    void todoAdded(const QDate& date, const QString& text);
+    void todoToggled(const QDate& date, int index, bool completed);
+    void notesChanged(const QDate& date, const QString& text);
+    void closed();
+};
+```
+
+### TodoRow
+
+```cpp
+class TodoRow : public QWidget {
+    Q_OBJECT
+public:
+    explicit TodoRow(const TodoData& data, QWidget* parent = nullptr);
+    void setCompleted(bool completed);
+    void setPriority(const QString& priority);
+signals:
+    void completedToggled(int todoId, bool completed);
+    void deleteRequested(int todoId);
+};
+```
+
+### PomodoroTimerWidget
+
+```cpp
+class PomodoroTimerWidget : public QWidget {
+    Q_OBJECT
+public:
+    enum class Mode { Work, Break };
+    enum class State { Idle, Running, Paused };
+
+    explicit PomodoroTimerWidget(QWidget* parent = nullptr);
+    void setMode(Mode mode);
+    void setWorkDurationMinutes(int minutes);
+    void setBreakDurationMinutes(int minutes);
+    Mode mode() const;
+    State state() const;
+    int remainingSeconds() const;
+
+public slots:
+    void start();
+    void pause();
+    void resume();
+    void reset();
+
+signals:
+    void modeChanged(Mode mode);
+    void stateChanged(State state);
+    void tick(int remainingSeconds);
+    void completed(Mode finishedMode);                // emit when timer hits 0
+
+private:
+    QTimer* m_tick;
+    CircularProgressBar* m_ring;                       // reuse existing widget
+    int m_totalSeconds;
+    int m_remainingSeconds;
+    Mode m_mode;
+    State m_state;
+};
+```
+
+### ProjectCard (extends EntityCard concept)
+
+```cpp
+class ProjectCard : public QFrame {
+    Q_OBJECT
+public:
+    explicit ProjectCard(int projectId, QWidget* parent = nullptr);
+    void setName(const QString& name);
+    void setDescription(const QString& text);          // 2-line truncation
+    void setPriority(const QString& priority);         // colors the badge
+    void setDeadline(const QDate& deadline);           // computes "Xd left" badge & color
+    void setProgress(int pct);
+    void setTaskCount(int done, int total);
+    void setTeamSize(int n);
+signals:
+    void clicked(int projectId);
+};
+```
+
+### CoursesFilterBar
+
+```cpp
+class CoursesFilterBar : public QWidget {
+    Q_OBJECT
+public:
+    struct Filter {
+        QString search;
+        int categoryId;   // -1 = all
+        QString status;   // "all" | "active" | "paused"
+    };
+    explicit CoursesFilterBar(QWidget* parent = nullptr);
+    Filter currentFilter() const;
+    void setCategories(const QList<CategoryData>& cats);
+signals:
+    void filterChanged(const Filter& filter);
+    void addNewRequested();
+};
+```
+
+### AnalyticsCharts (wraps `Qt6::Charts`)
+
+```cpp
+class AnalyticsView : public QWidget {
+    Q_OBJECT
+public:
+    explicit AnalyticsView(QWidget* parent = nullptr);
+    void refresh();                                    // re-query all sources
+
+private:
+    void buildKeyMetricsRow();                         // 4x StatsCard
+    void buildProgressLineChart();                     // QLineSeries
+    void buildStudyHoursBarChart();                    // QBarSeries
+    void buildCourseBreakdown();                       // horizontal bars (custom widget)
+    void buildTimeDistributionPie();                   // QPieSeries
+    void buildWeeklyPatternBar();                      // QBarSeries
+
+    QChartView* m_progressLine;
+    QChartView* m_studyHours;
+    QChartView* m_timeDistribution;
+    QChartView* m_weeklyPattern;
+};
+```
+
+### HeatmapAggregator
+
+```cpp
+class HeatmapAggregator : public QObject {
+    Q_OBJECT
+public:
+    enum class Mode { RecentBuckets, NormalizedRange };
+    QMap<QDate, ContributionHeatmap::DayData> aggregate(
+        const QDate& from, const QDate& to, Mode mode) const;
+
+private:
+    // For RecentBuckets (Home page, 12-week view):
+    //   activityCount = #ActivityLog + #completed Todos + #completed PomodoroSessions on that date
+    //   intensity = bucket(activityCount): 0->0, 1->1, 2..3->2, 4..6->3, 7+->4
+    //
+    // For NormalizedRange (Analytics page, 52-week view):
+    //   activityCount as above, then intensity = floor((count / max) * 4) bounded [0,4]
+};
+```
+
+## Expansion: Sequence Diagram — Pomodoro Completion
+
+```mermaid
+sequenceDiagram
+    participant Timer as PomodoroTimerWidget
+    participant View as PomodoroView
+    participant DB as DatabaseManager
+    participant Heatmap as HeatmapAggregator
+    participant Home as HomeDashboard
+
+    Timer->>Timer: remainingSeconds reaches 0
+    Timer->>View: emit completed(Mode::Work)
+    View->>DB: insertPomodoroSession(courseId, 25, now, "work")
+    DB->>DB: INSERT INTO PomodoroSessions
+    DB-->>View: ok
+    View->>Timer: setMode(Break), reset()
+    DB->>Heatmap: dataChanged()
+    Heatmap-->>Home: heatmap refreshed for today
+```
+
+## Expansion: Computed Values
+
+### Day Streak
+
+```
+ALGORITHM dayStreak()
+  today ← QDate.currentDate()
+  cursor ← today
+  streak ← 0
+  WHILE hasAnyActivity(cursor) DO
+    streak ← streak + 1
+    cursor ← cursor.addDays(-1)
+  RETURN streak
+
+ALGORITHM hasAnyActivity(date)
+  RETURN count(ActivityLog WHERE Timestamp::date = date) > 0
+       OR count(Todos WHERE Completed=1 AND CompletedAt::date = date) > 0
+       OR count(PomodoroSessions WHERE CompletedAt::date = date) > 0
+```
+
+### Completion Rate (Active courses only)
+
+```
+ALGORITHM completionRate()
+  courses ← SELECT * FROM CoursesProjects WHERE Type='Course' AND Status='active'
+  IF courses.isEmpty() RETURN 0
+  totals ← 0; count ← 0
+  FOR c IN courses:
+    totals ← totals + calculateEntityProgress(c.id)
+    count ← count + 1
+  RETURN ROUND(totals / count)
+```
+
+### Deadline Badge Color
+
+```
+ALGORITHM deadlineColor(deadline)
+  IF deadline.isInvalid() RETURN COLOR_NEUTRAL
+  daysLeft ← QDate.currentDate().daysTo(deadline)
+  IF daysLeft < 0           RETURN COLOR_ERROR
+  ELSE IF daysLeft <= 3     RETURN COLOR_ERROR
+  ELSE IF daysLeft <= 7     RETURN COLOR_WARNING
+  ELSE                       RETURN COLOR_NEUTRAL
+```
+
+## Expansion: Migration from schema_version 1 → 2
+
+```
+ALGORITHM migrateToV2()
+  BEGIN TRANSACTION
+    CREATE TABLE SchemaInfo IF NOT EXISTS
+    INSERT OR IGNORE INTO SchemaInfo VALUES('schema_version', '1')
+
+    CREATE TABLE Categories ...
+    ALTER TABLE CoursesProjects ADD COLUMN CategoryID ...     (ignore if column exists)
+    ALTER TABLE CoursesProjects ADD COLUMN Status ...
+    CREATE TABLE ProjectMeta ...
+    CREATE TABLE Todos ...
+    CREATE TABLE PomodoroSessions ...
+    CREATE TABLE CalendarDayDetails ...
+    CREATE TABLE Settings ...
+
+    -- Seed defaults
+    INSERT OR IGNORE INTO Categories (Name, Color) VALUES
+      ('Algorithms','#10b981'),
+      ('Web Development','#3b82f6'),
+      ('Machine Learning','#8b5cf6'),
+      ('Systems','#f59e0b'),
+      ('Security','#ec4899')
+
+    INSERT OR IGNORE INTO Settings (Key,Value) VALUES
+      ('pomodoro.workMinutes','25'),
+      ('pomodoro.breakMinutes','5'),
+      ('notifications.enabled','1'),
+      ('sound.enabled','1'),
+      ('courses.autoPauseDays','30')
+
+    UPDATE SchemaInfo SET Value='2' WHERE Key='schema_version'
+  COMMIT
+```
+
+## Expansion: New Dependencies
+
+Add to root `CMakeLists.txt`:
+
+```cmake
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Sql Charts Svg)
+target_link_libraries(CTracker PRIVATE
+    Qt6::Core Qt6::Widgets Qt6::Sql Qt6::Charts Qt6::Svg)
+```
+
+- `Qt6::Charts` — line/bar/pie charts on AnalyticsView.
+- `Qt6::Svg` — render Lucide-style SVG icons in the sidebar and action buttons.
+
+## Phase 5 Implementation Notes (as built)
+
+These notes record minor deviations between the original Phase 5 widget interfaces above and the shipped `src/`/`include/` files. They do not change behavior or the public contract, only widget composition details.
+
+### CircularProgressBar
+- Owns its own paint; `setProgress()` clamps to `[0,100]`, emits `progressChanged(int)` only when value actually changes, and calls `update()`.
+- Default palette: `m_backgroundColor = #2d323d` (border token), `m_progressColor = #10b981` (primary accent) — matches the canonical theme palette in CLAUDE.md §5.
+- Text size scales with `rect.width() / 5.0` (min 8 pt) so the percent label adapts to card vs. timer-ring sizes.
+
+### ContributionHeatmap
+- Anchor logic: the grid starts on the Sunday on/before Jan 1 of `m_currentYear`, so `COLS=53` × `ROWS=7` always brackets the year cleanly (53 × 7 = 371 cells, matching tasks.md).
+- Tooltip text formats as `MMM d, yyyy\n<progress> progress · <count> activities` via `QToolTip::showText()` at the global cursor position.
+- Mouse tracking is enabled in the constructor; `leaveEvent` hides the tooltip.
+- Month labels are drawn at the first week whose Sunday falls in a new month (short locale name). Day-of-week labels are drawn only for Mon/Wed/Fri (GitHub convention).
+
+### SessionTaskRow
+- The label↔edit swap uses a `QStackedWidget` (`m_nameStack`) with the `QLabel` and `QLineEdit` as two pages, instead of swapping a single child. This keeps the `QHBoxLayout` stable when entering/leaving edit mode.
+- Edit mode is entered via `eventFilter` on the label (`QEvent::MouseButtonDblClick`), not by subclassing `mouseDoubleClickEvent` — keeps the row a pure `QWidget` and avoids per-label subclasses.
+- `Esc` while editing reverts to the previous name; `QLineEdit::editingFinished` commits (after `trimmed()`/empty rejection).
+- `progressChanged(old, new)` is suppressed when `old == new`, mirroring the activity-log dedupe rule at the DB layer.
+
+### UnitExpandableWidget
+- Header arrow uses Unicode glyphs (`▶` / `▼`) instead of an icon resource so it works before `assets/icons/lucide/` is populated in Phase 8.3.2.
+- `removeSessionTask` uses `deleteLater()` instead of immediate delete to be safe against in-flight signals from the row's slider.
+- `calculateOverallProgress()` returns 0 for an empty unit (validates Property 14 boundary).
+
+### EntityCard
+- Hover highlight is driven by a dynamic QSS property (`setProperty("hover", true/false)` + `style()->unpolish/polish`) rather than a `QPropertyAnimation`. This lets `assets/styles/dark-industrial.qss` (Phase 7) control the visual without per-widget animation state. A future polish pass may add a `QGraphicsDropShadowEffect` for the "shadow on hover" requirement; the API surface is unchanged.
+- Fixed size 160×180 px; type badge is a `QLabel` with `objectName = "entityTypeBadge"` so QSS can target it.
+
+### CMake registration
+- All five new widget pairs added to `SOURCES` / `HEADERS` in `CTracker/CMakeLists.txt`. `Qt6::Charts` and `Qt6::Svg` are NOT linked yet — that arrives with Phase 8.3.1 alongside the chart-bearing AnalyticsView.
+
+### Incidental fix
+- `src/DataImporter.cpp` was missing `#include <QSqlError>`; added in this phase to unblock the build. No behavior change.
+
+## Phase 6 Implementation Notes (as built)
+
+Phase 6 delivered the **base** of tasks 6.1–6.6 only. The expansion tasks 6.7–6.15 (reworked HomeDashboard, CoursesView, ProjectsView, TodoView, PomodoroView, charts-based AnalyticsView, EntityCreateDialog, expanded MainWindow integration) depend on Schema v2 (Phase 2.8), extended DatabaseManager APIs (Phase 2.9), and expansion widgets 5.6–5.13 — none of which exist yet. They are intentionally left unticked.
+
+### Files added
+
+| Header | Source | Role |
+| --- | --- | --- |
+| `include/SideNavigationBar.h` | `src/SideNavigationBar.cpp` | 60px fixed-width sidebar with 5 `QPushButton`s in a `QButtonGroup` (exclusive). Buttons use Unicode glyphs (⌂ ☰ ▤ ≡ ⚙) as a Phase-8.3.2 placeholder until SVG icons land. Emits `navigationRequested(int)`; `setActiveButton(int)` toggles dynamic `active` QSS property and forces a style repolish. |
+| `include/HomeDashboard.h` | `src/HomeDashboard.cpp` | `QScrollArea` + 3-column `QGridLayout` of `EntityCard`s for all courses + projects. Subscribes to `DatabaseManager::dataChanged` for live refresh. `computeOverallProgress(int)` averages session progress across all units of an entity (returns 0 when empty). Emits `courseSelected(int)` / `projectSelected(int)`. Shows an empty-state label when no entities exist. |
+| `include/EntityDetailView.h` | `src/EntityDetailView.cpp` | Shared base class — takes `EntityCard::EntityType` in ctor. Title bar = Back / name / `CircularProgressBar` (64×64) / `+ Unit` / `+ Session` (or `+ Task`) / Delete. Scrollable list of `UnitExpandableWidget`s. Methods: `loadEntity(int)`, `clearUnits()`, `rebuildUnits()`, `refreshOverall()`. Uses `QInputDialog::getText` for new-unit/new-session names and `QMessageBox::question` for delete confirmation. Signals: `entityRemoved(int)`, `backRequested()`. |
+| `include/CourseDetailView.h` | *(header-only)* | Thin subclass: ctor forwards `EntityType::Course`. Provides semantic alias `loadCourse(int)`. |
+| `include/ProjectDetailView.h` | *(header-only)* | Thin subclass: ctor forwards `EntityType::Project`. Provides semantic alias `loadProject(int)`. |
+| `include/AnalyticsView.h` | `src/AnalyticsView.cpp` | Takes `ActivityLogModel*` from owner. ◀ / ▶ year-nav buttons + center year label, `ContributionHeatmap`, legend row with 5 colored swatches between "Less" and "More". `loadYear(int)` queries `getDailyProgressTotals` + `getDailyActivityCounts`, normalises via `floor((total/max)*4)` clamped to [0,4] with an any-activity floor of 1, hands the result to the heatmap. Subscribes to `DatabaseManager::dataChanged`. |
+| `include/SettingsView.h` | `src/SettingsView.cpp` | Owns `DataImporter` + `DataExporter`. Two `QGroupBox`es — "Data Management" with Import / Export buttons that drive `QFileDialog`s, and "Database Location" with a selectable read-only `QLabel` showing `QSqlDatabase::database().databaseName()`. Importer/exporter `*Completed` / `*Failed` signals surface `QMessageBox` toasts. |
+| `include/MainWindow.h` | `src/MainWindow.cpp` | `QMainWindow` with central `QHBoxLayout`(SideNavigationBar, `QStackedWidget`). `StackIndex` enum (`HomeStack=0`, `CourseStack=1`, `ProjectStack=2`, `AnalyticsStack=3`, `SettingsStack=4`). Owns the single `ActivityLogModel` instance and hands it to `AnalyticsView`. `loadStyleSheet()` reads `:/styles/dark-industrial.qss` if the resource exists, otherwise it's a no-op (Phase 7 work). Min size 900×600. |
+| `src/main.cpp` *(rewritten)* | — | Bootstraps `QApplication`, calls `DatabaseManager::instance()->initialize()` (exit code 1 + critical `QMessageBox` on failure), shows `MainWindow`, runs `app.exec()`, closes the DB on exit. |
+
+### Deviations from the spec
+
+- **Shared base class chosen.** Task 6.3 noted "*can share a base class*" — we factored `EntityDetailView` with an `EntityType` ctor parameter and reduced `CourseDetailView` / `ProjectDetailView` to header-only thin subclasses providing semantic `loadCourse(int)` / `loadProject(int)` aliases for wiring readability.
+- **Sidebar / stack-index decoupling.** `SideNavigationBar` emits its own `*Page` indices (0–4). `MainWindow::onNavigationRequested` decides what each index resolves to in stack terms — when expansion adds CoursesView / ProjectsView pages, only that switch needs to change. While only base detail views exist, pressing the Courses (or Projects) sidebar button shows the last-loaded detail view (via `currentEntityId() >= 0`) or falls back to `HomeStack` so the user never sees an empty detail panel.
+- **Unicode glyph icons** in `SideNavigationBar` are placeholders until Phase 8.3.2 ships proper SVGs through `Qt6::Svg`.
+- **Graceful QSS fallback.** `MainWindow::loadStyleSheet()` tolerates a missing or empty `dark-industrial.qss` so Phase 6 builds and runs without Phase 7's stylesheet. Once Phase 7 lands the QSS at `:/styles/dark-industrial.qss`, no code change is needed.
+- **Base AnalyticsView (heatmap-only)** is the stepping stone toward expansion Task 6.12 (Recharts-equivalent area/bar/pie charts via `Qt6::Charts`). `Qt6::Charts` is *not* linked yet.
+- **`main.cpp` is a minimal bootstrap**, not the full satisfaction of Tasks 8.1 / 8.2 (application metadata, theme setup, `qInstallMessageHandler`, splash screen, etc.). Those checkboxes stay unticked.
+
+### Build wiring
+
+- 6 new sources (`SideNavigationBar`, `HomeDashboard`, `EntityDetailView`, `AnalyticsView`, `SettingsView`, `MainWindow`) and 8 new headers (those plus `CourseDetailView`, `ProjectDetailView`) added to `SOURCES` / `HEADERS` in `CTracker/CMakeLists.txt`. The build is clean — `mingw32-make` produces `CTracker.exe` with no warnings from new code.
+
+## Expansion: Updated Correctness Properties
+
+### Property 21: Category Color Validity
+
+*For any* Category, the Color field SHALL match the regex `^#[0-9a-fA-F]{6}$`.
+
+**Validates: Requirements 17.1**
+
+### Property 22: Paused Course Exclusion
+
+*For any* course with Status='paused', it SHALL NOT contribute to the Home Completion Rate or Active Courses count.
+
+**Validates: Requirements 18.3**
+
+### Property 23: Pomodoro Session Immutability
+
+*Once* inserted, a PomodoroSession row SHALL never be updated, only deleted on user request.
+
+**Validates: Requirements 22.6**
+
+### Property 24: Heatmap Aggregation Completeness
+
+*For any* day with at least one ActivityLog, completed Todo, or PomodoroSession, the heatmap SHALL register a non-zero activityCount for that date.
+
+**Validates: Requirements 26.1**
+
+### Property 25: Schema Version Monotonicity
+
+*For any* application start, the schema_version SHALL be greater than or equal to the previous run's version, and migrations SHALL apply in strictly ascending order.
+
+**Validates: Requirements 30.2**
+
+### Property 26: Todo Priority Validity
+
+*For any* Todo, the Priority field SHALL be one of {"high", "medium", "low"}.
+
+**Validates: Requirements 21.2**
+
+### Property 27: Calendar Indicator Accuracy
+
+*For any* date with `hasContent() = true`, the Calendar SHALL render an indicator dot.
+
+**Validates: Requirements 25.6**
+
+### Property 28: Deadline Badge Color Mapping
+
+*For any* project with a valid deadline, the badge color SHALL be:
+- Error/red if `daysTo(deadline) < 0` or `<= 3`
+- Warning/amber if `4..7`
+- Neutral/gray if `> 7`
+
+**Validates: Requirements 20.2**
+
+### Property 29: Auto Mode Switch
+
+*For any* completed Pomodoro work session, the timer SHALL switch to Break mode and reset to the configured break duration.
+
+**Validates: Requirements 22.6, 22.7**
+
+### Property 30: Settings Persistence
+
+*For any* change to Settings, the value SHALL be persisted before the dialog closes, and the new value SHALL be in effect on the next read.
+
+**Validates: Requirements 24.6**

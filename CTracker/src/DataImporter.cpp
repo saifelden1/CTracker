@@ -7,6 +7,7 @@
 #include <QJsonParseError>
 #include <QJsonValue>
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QVariant>
 #include <QtGlobal>

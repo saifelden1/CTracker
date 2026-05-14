@@ -20,6 +20,17 @@ set(SOURCES
     src/ActivityLogModel.cpp
     src/DataImporter.cpp
     src/DataExporter.cpp
+    src/CircularProgressBar.cpp
+    src/ContributionHeatmap.cpp
+    src/SessionTaskRow.cpp
+    src/UnitExpandableWidget.cpp
+    src/EntityCard.cpp
+    src/SideNavigationBar.cpp
+    src/HomeDashboard.cpp
+    src/EntityDetailView.cpp
+    src/AnalyticsView.cpp
+    src/SettingsView.cpp
+    src/MainWindow.cpp
 )
 
 # Header files (moc will process these automatically via AUTOMOC)
@@ -29,6 +40,19 @@ set(HEADERS
     include/ActivityLogModel.h
     include/DataImporter.h
     include/DataExporter.h
+    include/CircularProgressBar.h
+    include/ContributionHeatmap.h
+    include/SessionTaskRow.h
+    include/UnitExpandableWidget.h
+    include/EntityCard.h
+    include/SideNavigationBar.h
+    include/HomeDashboard.h
+    include/EntityDetailView.h
+    include/CourseDetailView.h
+    include/ProjectDetailView.h
+    include/AnalyticsView.h
+    include/SettingsView.h
+    include/MainWindow.h
 )
 
 # Create executable

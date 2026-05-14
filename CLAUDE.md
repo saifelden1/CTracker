@@ -31,21 +31,33 @@ Do not hide assumptions. If the prompt is ambiguous, pause and clarify before co
 
 ## 4. Documentation integrity (write-back rule)
 
-The `.ai/specs/` folder is the **source of truth** for project state. After completing work:
+The `.ai/specs/` folder is the **source of truth** for project state. **Every change or update made to the codebase MUST be mirrored back into `.ai/specs/` in the same turn** — code and specs ship together, never separately.
 
-- Tick the corresponding checkboxes in `.ai/specs/tasks.md`.
-- Update `.ai/specs/design.md` if the implementation deviates from the documented design.
+- Any new behavior, requirement, or scope change → update `.ai/specs/requirements.md`.
+- Any deviation from, addition to, or refinement of the documented architecture, schema, widget structure, or styling → update `.ai/specs/design.md`.
+- Any task started, advanced, or finished → tick / add the corresponding checkbox in `.ai/specs/tasks.md`.
+- If a change touches multiple specs, update all of them — partial sync is not acceptable.
+- Treat a code edit without the matching spec edit as an incomplete change; do not report the work as done until specs reflect reality.
 - **Do not** create separate "thinking", "log", "notes", or "plan" files unless explicitly asked.
 
 ## 5. Project facts (stable context)
 
-- **Stack:** C++17, Qt 6 (Core / Widgets / Sql), SQLite, CMake ≥ 3.20.
+- **Stack:** C++17, Qt 6 (Core / Widgets / Sql / Charts / Svg), SQLite, CMake ≥ 3.20.
 - **Architecture:** Strict Model–View separation; Signal/Slot wiring; `DatabaseManager` singleton; dark industrial QSS theme.
 - **UI strategy (hybrid):**
   - `.ui` (Qt Designer) → static layouts only: `MainWindow` frame, `SettingsView`, `AnalyticsView` skeleton.
-  - Pure C++ → all custom widgets: `CircularProgressBar`, `ContributionHeatmap`, `SessionTaskRow`, `UnitExpandableWidget`, `EntityCard`.
-- **Theme palette:** background `#0d1117`, panel `#161b22`, border `#30363d`, text `#c9d1d9`, accent `#39d353` (GitHub green).
-- **Hierarchy:** Entity (Course/Project) → Units → Sessions/Tasks → ActivityLog (cascade-delete on every FK).
+  - Pure C++ → all custom widgets.
+- **Theme palette (canonical, matches `design/`):** background `#1a1d24` / elevated `#1f2229` / surface `#252932`; sidebar `#16181d`; primary accent `#10b981`; text `#e4e6eb`; borders `#2d323d`.
+- **Hierarchy:** Entity (Course/Project) → Units → Sessions/Tasks → ActivityLog (cascade-delete on every FK). Schema is versioned (`SchemaInfo`); v2 adds Categories, ProjectMeta, Todos, PomodoroSessions, CalendarDayDetails, Settings.
+
+## 5a. Visual reference: `design/` is reference-only
+
+The repo contains a React + TypeScript + Tailwind prototype under `design/`. **It is a visual and interaction spec, never a build input.** Hard rules for every session and subagent:
+
+- **Implementation is Qt 6 + C++17 + QSS.** No React, TSX, Tailwind, shadcn/ui, Radix, or Recharts code is ported, embedded, executed, or shipped.
+- Translation map: JSX → `QWidget`/`QFrame` subclasses; Tailwind classes → handwritten QSS rules; Radix primitives → native Qt equivalents (`QMenu`, `QToolTip`, `QDialog`, `QComboBox`); Recharts → `Qt6::Charts`; Lucide icons → SVGs rendered via `Qt6::Svg`; React state hooks → member variables + `connect()` signal/slot wiring.
+- When asked to "match the design," read the relevant `.tsx` file for layout/spacing/color *values* only; write the actual widget in C++.
+- The React project is never built into the Qt binary. Plugin-generated `.cpp`/`.h` output (if any) is treated as reference material — never pasted into `src/`/`include/`.
 
 ## 6. Subagents inherit this file
 

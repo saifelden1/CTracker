@@ -1,19 +1,26 @@
 #include <QApplication>
-#include <QMainWindow>
-#include <QLabel>
+#include <QMessageBox>
 
-int main(int argc, char *argv[]) {
+#include "DatabaseManager.h"
+#include "MainWindow.h"
+
+int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
-    
-    QMainWindow window;
-    window.setWindowTitle("CTracker");
-    window.resize(900, 600);
-    
-    QLabel *label = new QLabel("CTracker Boilerplate Loaded!", &window);
-    label->setAlignment(Qt::AlignCenter);
-    window.setCentralWidget(label);
-    
+    QApplication::setApplicationName(QStringLiteral("CTracker"));
+    QApplication::setOrganizationName(QStringLiteral("CTracker"));
+
+    auto* db = DatabaseManager::instance();
+    if (!db->initialize()) {
+        QMessageBox::critical(nullptr,
+            QObject::tr("CTracker"),
+            QObject::tr("Failed to initialize the database. The application will exit."));
+        return 1;
+    }
+
+    MainWindow window;
     window.show();
-    
-    return app.exec();
+
+    const int rc = app.exec();
+    db->close();
+    return rc;
 }
