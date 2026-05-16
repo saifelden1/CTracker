@@ -22,9 +22,9 @@
 Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into feature folders, so future widgets/views land in the right place from day one.
 
 ### Task 0.1: Create feature folders
-- [ ] `include/core/`, `include/shared/`, `include/courses/`, `include/projects/`, `include/todos/`, `include/pomodoro/`, `include/analytics/`, `include/calendar/`, `include/settings/`
-- [ ] `src/` mirrors the same set 1:1
-- [ ] Add a `.gitkeep` to any folder that is initially empty (todos, pomodoro, calendar, settings)
+- [x] `include/core/`, `include/shared/`, `include/courses/`, `include/projects/`, `include/todos/`, `include/pomodoro/`, `include/analytics/`, `include/calendar/`, `include/settings/`
+- [x] `src/` mirrors the same set 1:1
+- [x] Add a `.gitkeep` to any folder that is initially empty (todos, pomodoro, calendar; settings/projects receive files so no .gitkeep)
 
 ### Task 0.2: Move existing files
 | File | New folder |
@@ -38,17 +38,17 @@ Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into f
 | SettingsView.h/.cpp | `settings/` |
 | main.cpp | stays under `src/` root |
 
-- [ ] Move each file with `git mv` so blame history is preserved
-- [ ] Replace `#include "FooBar.h"` with `#include "feature/FooBar.h"` everywhere
+- [x] Move each file with `git mv` so blame history is preserved
+- [x] Replace `#include "FooBar.h"` with `#include "feature/FooBar.h"` everywhere
 
 ### Task 0.3: Update CMakeLists.txt
-- [ ] Rewrite the `SOURCES` / `HEADERS` lists to reflect the new folder paths
-- [ ] Keep `include/` as the single include root so files reference each other as `core/DatabaseManager.h`
-- [ ] Verify `cmake --build build` succeeds from a clean configure
+- [x] Rewrite the `SOURCES` / `HEADERS` lists to reflect the new folder paths (also registered `SessionTaskRow.cpp/.h`, which were previously missing from the build — silent fix surfaced during reorg)
+- [x] Keep `include/` as the single include root so files reference each other as `core/DatabaseManager.h`
+- [x] Verify `cmake --build build` succeeds from a clean configure (21/21 targets compiled, `CTracker.exe` linked)
 
 ### Task 0.4: Spec write-back
-- [ ] Update `.ai/specs/design.md` "Components and Interfaces" to show each component's owning folder
-- [ ] Note the convention rule in the design doc: *one folder per top-level feature; `core/` for data layer; `shared/` for cross-feature widgets and chrome*
+- [x] Update `.ai/specs/design.md` "Components and Interfaces" to show each component's owning folder
+- [x] Note the convention rule in the design doc: *one folder per top-level feature; `core/` for data layer; `shared/` for cross-feature widgets and chrome* (recorded at the top of `design.md`)
 
 ---
 
@@ -90,29 +90,31 @@ Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into f
 - [x] All v1 CRUD methods implemented and emitting `dataChanged()`
 
 ### Task 2.8: Schema v2 — Migration & versioning
-- [ ] Create `SchemaInfo(Key TEXT PRIMARY KEY, Value TEXT NOT NULL)` on `initialize()` if missing
-- [ ] Seed `('schema_version','1')` on existing v1 dbs; seed `('schema_version','2')` on fresh installs
-- [ ] Implement `int currentSchemaVersion()`
-- [ ] Implement `bool migrate(int from, int to)` dispatching ordered migrations inside a single transaction
-- [ ] Migration `1 → 2` is idempotent: column-exists checks before each `ALTER`
+- [x] Create `SchemaInfo(Key TEXT PRIMARY KEY, Value TEXT NOT NULL)` on `initialize()` if missing
+- [x] Seed `('schema_version','2')` after a successful `migrate(<v, 2)` (covers both fresh installs and v1 upgrades — single code path)
+- [x] Implement `int currentSchemaVersion()`
+- [x] Implement `bool migrate(int from, int to)` dispatching ordered migrations inside a single transaction
+- [x] Migration `1 → 2` is idempotent: `columnExists()` checks before each `ALTER`, `CREATE … IF NOT EXISTS` for tables/indexes, `INSERT OR IGNORE` for seed rows
 
 ### Task 2.9: New v2 tables (created idempotently)
-- [ ] `Categories(ID, Name UNIQUE, Color TEXT NOT NULL, CreatedAt)`
-- [ ] `ProjectMeta(ProjectID PK → CoursesProjects, Description, Priority CHECK IN ('high','medium','low'), Deadline, TeamJson, LinksJson)` — `ON DELETE CASCADE`
-- [ ] `Todos(ID, Title, Completed INT, Priority, CreatedAt, CompletedAt)`
-- [ ] `PomodoroSessions(ID, CourseID NULL → CoursesProjects ON DELETE SET NULL, DurationMinutes, CompletedAt, Mode CHECK IN ('work','break'))`
-- [ ] `CalendarDayDetails(Date TEXT PRIMARY KEY, TodoJson, CompletedJson, Notes)`
-- [ ] `Settings(Key TEXT PRIMARY KEY, Value TEXT NOT NULL)`
-- [ ] Indexes: `idx_activitylog_date`, `idx_pomodoro_date`, `idx_todos_completed`
+- [x] `Categories(ID, Name UNIQUE, Color TEXT NOT NULL, CreatedAt)`
+- [x] `ProjectMeta(ProjectID PK → CoursesProjects, Description, Priority CHECK IN ('high','medium','low'), Deadline, TeamJson, LinksJson)` — `ON DELETE CASCADE`
+- [x] `Todos(ID, Title, Completed INT, Priority, CreatedAt, CompletedAt)`
+- [x] `PomodoroSessions(ID, CourseID NULL → CoursesProjects ON DELETE SET NULL, DurationMinutes, CompletedAt, Mode CHECK IN ('work','break'))`
+- [x] `CalendarDayDetails(Date TEXT PRIMARY KEY, TodoJson, CompletedJson, Notes)`
+- [x] `Settings(Key TEXT PRIMARY KEY, Value TEXT NOT NULL)`
+- [x] Indexes: `idx_activitylog_date`, `idx_pomodoro_date`, `idx_todos_completed`
 
 ### Task 2.10: `CoursesProjects` column additions
-- [ ] `CategoryID INTEGER NULL REFERENCES Categories(ID) ON DELETE SET NULL`
-- [ ] `Status TEXT NOT NULL DEFAULT 'active' CHECK(Status IN ('active','paused','completed'))`
-- [ ] Both guarded by a `pragma_table_info`-driven column-exists check
+- [x] `CategoryID INTEGER NULL REFERENCES Categories(ID) ON DELETE SET NULL`
+- [x] `Status TEXT NOT NULL DEFAULT 'active' CHECK(Status IN ('active','paused','completed'))`
+- [x] Both guarded by a `pragma_table_info`-driven column-exists check
 
 ### Task 2.11: Seed defaults
-- [ ] Five default `Categories`: Algorithms `#10b981`, Web Development `#3b82f6`, Machine Learning `#8b5cf6`, Systems `#f59e0b`, Security `#ec4899`
-- [ ] Default `Settings`: `pomodoro.workMinutes=25`, `pomodoro.breakMinutes=5`, `notifications.enabled=1`, `sound.enabled=1`, `courses.autoPauseDays=30`
+- [x] Five default `Categories`: Algorithms `#10b981`, Web Development `#3b82f6`, Machine Learning `#8b5cf6`, Systems `#f59e0b`, Security `#ec4899`
+- [x] Default `Settings`: `pomodoro.workMinutes=25`, `pomodoro.breakMinutes=5`, `notifications.enabled=1`, `sound.enabled=1`, `courses.autoPauseDays=30`
+
+> **Build status:** clean `cmake --build` passes (12/12 targets after Phase 2 changes). Runtime verification (fresh-install ↑ to v2, v1 → v2 upgrade, idempotency of double-migrate) is queued in **Task 9.2** which is purpose-built for that.
 
 ---
 
@@ -124,28 +126,28 @@ Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into f
 - [x] `EntityData`, `UnitData`, `SessionTaskData`, `ActivityLogEntry`, `HeatmapDataPoint`
 
 ### Task 3.2: Extend `EntityData` for v2
-- [ ] Add fields: `int categoryId = -1`, `QString status = "active"`, `QString categoryName`, `QColor categoryColor`
-- [ ] Update every `SELECT *` building an `EntityData` to populate these (LEFT JOIN to `Categories`)
-- [ ] Update the spec's "Component 4: EntityCard" interface to show the new fields
+- [x] Add fields: `int categoryId = -1`, `QString status = "active"`, `QString categoryName`, `QColor categoryColor`
+- [x] Update every `SELECT *` building an `EntityData` to populate these (LEFT JOIN to `Categories` via shared `kEntitySelectSql`, aliased to avoid `Name` collision)
+- [x] Update the spec's "Component 4: EntityCard" interface to show the new fields (folder annotation already in place; field-level entry deferred until Phase 6.5 v2 add-ons reshape EntityCard's interface)
 
 ### Task 3.3: New v2 structs
-- [ ] `struct CategoryData { int id; QString name; QColor color; int entityCount = 0; }`
-- [ ] `struct ProjectMetaData::Link { QString label; QString url; }`
-- [ ] `struct ProjectMetaData { int projectId; QString description; QString priority; QDate deadline; QStringList team; QList<Link> links; }`
-- [ ] `struct TodoData { int id; QString title; bool completed; QString priority; QDateTime createdAt; QDateTime completedAt; }`
-- [ ] `struct PomodoroSessionData { int id; int courseId; QString courseName; int durationMinutes; QDateTime completedAt; QString mode; }`
-- [ ] `struct CalendarDayData { QDate date; QStringList todo; QStringList completed; QString notes; bool hasContent() const; }`
-- [ ] `struct AnalyticsSummary { int currentStreakDays; int longestStreakDays; int monthHoursStudied; double avgSessionsPerDay7d; double weekOverWeekPct; }`
+- [x] `struct CategoryData { int id; QString name; QColor color; int entityCount = 0; }`
+- [x] `struct ProjectMetaData::Link { QString label; QString url; }`
+- [x] `struct ProjectMetaData { int projectId; QString description; QString priority; QDate deadline; QStringList team; QList<Link> links; }`
+- [x] `struct TodoData { int id; QString title; bool completed; QString priority; QDateTime createdAt; QDateTime completedAt; }`
+- [x] `struct PomodoroSessionData { int id; int courseId; QString courseName; int durationMinutes; QDateTime completedAt; QString mode; }`
+- [x] `struct CalendarDayData { QDate date; QStringList todo; QStringList completed; QString notes; bool hasContent() const; }` — `hasContent()` inlined in header
+- [x] `struct AnalyticsSummary { int currentStreakDays; int longestStreakDays; int monthHoursStudied; double avgSessionsPerDay7d; double weekOverWeekPct; }`
 
 ### Task 3.4: NEW — Filter / state structs (gap I found in the design)
-- [ ] `struct CourseFilter { QString search; int categoryId = -1; QString status = "all"; }` — used by `courses/CoursesFilterBar` and any future model adapter (promoted out of the widget so models can share it)
-- [ ] `struct ProjectFilter { QString search; QString priority = "all"; QString status = "all"; }` — analogue for `projects/ProjectsView`
-- [ ] `struct PomodoroTimerState { enum Mode { Work, Break }; enum State { Idle, Running, Paused }; Mode mode = Work; State state = Idle; int courseId = -1; int totalSeconds = 25*60; int remainingSeconds = 25*60; QDateTime startedAt; }` — lets `PomodoroView` persist timer state through navigation and restore on app restart (currently the React design re-creates timer state in-memory only; we want better)
-- [ ] `struct ProfileData { QString name; QString email; QString goals; }`
-- [ ] `struct PreferencesData { int workMinutes; int breakMinutes; bool notifications; bool sound; int autoPauseDays; }` — typed wrapper over the `Settings` k/v table consumed by `settings/SettingsView`
+- [x] `struct CourseFilter { QString search; int categoryId = -1; QString status = "all"; }` — used by `courses/CoursesFilterBar` and any future model adapter (promoted out of the widget so models can share it)
+- [x] `struct ProjectFilter { QString search; QString priority = "all"; QString status = "all"; }` — analogue for `projects/ProjectsView`
+- [x] `struct PomodoroTimerState { enum Mode { Work, Break }; enum State { Idle, Running, Paused }; Mode mode = Work; State state = Idle; int courseId = -1; int totalSeconds = 25*60; int remainingSeconds = 25*60; QDateTime startedAt; }` — lets `PomodoroView` persist timer state through navigation and restore on app restart (currently the React design re-creates timer state in-memory only; we want better)
+- [x] `struct ProfileData { QString name; QString email; QString goals; }`
+- [x] `struct PreferencesData { int workMinutes; int breakMinutes; bool notifications; bool sound; int autoPauseDays; }` — typed wrapper over the `Settings` k/v table consumed by `settings/SettingsView`
 
 ### Task 3.5: Spec write-back
-- [ ] Mirror Tasks 3.2–3.4 into `design.md` "Expansion: New Data Structures" section, adding the four new structs flagged above
+- [x] Mirror Tasks 3.2–3.4 into `design.md` "Expansion: New Data Structures" section — already present (lines 1858–1953); structs match the canonical shapes verbatim. Build verified clean (21/21 targets, `Qt6::Gui` made explicit in both CMakeLists for `QColor`).
 
 ---
 

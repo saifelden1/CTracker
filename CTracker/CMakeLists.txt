@@ -9,50 +9,78 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 # Find Qt 6
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql Test)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql Test)
 
 enable_testing()
 
-# Source files
+# -----------------------------------------------------------------------------
+# Source tree is feature-grouped (Phase 0 reorg).
+# Each top-level feature owns a folder under both include/ and src/.
+# `include/` stays the single include root, so files reference each other
+# as e.g. "core/DatabaseManager.h" or "courses/EntityCard.h".
+# -----------------------------------------------------------------------------
+
+# Source files (grouped by feature)
 set(SOURCES
     src/main.cpp
-    src/DatabaseManager.cpp
-    src/ActivityLogModel.cpp
-    src/DataImporter.cpp
-    src/DataExporter.cpp
-    src/CircularProgressBar.cpp
-    src/ContributionHeatmap.cpp
-    src/SessionTaskRow.cpp
-    src/UnitExpandableWidget.cpp
-    src/EntityCard.cpp
-    src/SideNavigationBar.cpp
-    src/HomeDashboard.cpp
-    src/EntityDetailView.cpp
-    src/AnalyticsView.cpp
-    src/SettingsView.cpp
-    src/MainWindow.cpp
+
+    # core/ — data layer
+    src/core/DatabaseManager.cpp
+    src/core/DataImporter.cpp
+    src/core/DataExporter.cpp
+
+    # shared/ — cross-feature widgets and chrome
+    src/shared/CircularProgressBar.cpp
+    src/shared/SideNavigationBar.cpp
+    src/shared/HomeDashboard.cpp
+    src/shared/MainWindow.cpp
+
+    # courses/ — course / entity detail surface
+    src/courses/SessionTaskRow.cpp
+    src/courses/UnitExpandableWidget.cpp
+    src/courses/EntityCard.cpp
+    src/courses/EntityDetailView.cpp
+
+    # analytics/
+    src/analytics/ActivityLogModel.cpp
+    src/analytics/ContributionHeatmap.cpp
+    src/analytics/AnalyticsView.cpp
+
+    # settings/
+    src/settings/SettingsView.cpp
 )
 
-# Header files (moc will process these automatically via AUTOMOC)
+# Header files (AUTOMOC processes these)
 set(HEADERS
-    include/DataStructures.h
-    include/DatabaseManager.h
-    include/ActivityLogModel.h
-    include/DataImporter.h
-    include/DataExporter.h
-    include/CircularProgressBar.h
-    include/ContributionHeatmap.h
-    include/SessionTaskRow.h
-    include/UnitExpandableWidget.h
-    include/EntityCard.h
-    include/SideNavigationBar.h
-    include/HomeDashboard.h
-    include/EntityDetailView.h
-    include/CourseDetailView.h
-    include/ProjectDetailView.h
-    include/AnalyticsView.h
-    include/SettingsView.h
-    include/MainWindow.h
+    # core/
+    include/core/DataStructures.h
+    include/core/DatabaseManager.h
+    include/core/DataImporter.h
+    include/core/DataExporter.h
+
+    # shared/
+    include/shared/CircularProgressBar.h
+    include/shared/SideNavigationBar.h
+    include/shared/HomeDashboard.h
+    include/shared/MainWindow.h
+
+    # courses/
+    include/courses/SessionTaskRow.h
+    include/courses/UnitExpandableWidget.h
+    include/courses/EntityCard.h
+    include/courses/EntityDetailView.h
+    include/courses/CourseDetailView.h   # alias header
+
+    # projects/
+    include/projects/ProjectDetailView.h # alias header
+
+    # analytics/
+    include/analytics/ActivityLogModel.h
+    include/analytics/ContributionHeatmap.h
+    include/analytics/AnalyticsView.h
+
+    # settings/
+    include/settings/SettingsView.h
 )
 
 # Create executable
@@ -63,12 +91,13 @@ qt_add_executable(CTracker
     resources/resources.qrc
 )
 
-# Include directories
+# Include directories — `include/` is the single include root.
 target_include_directories(CTracker PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Link Qt libraries
 target_link_libraries(CTracker PRIVATE
     Qt6::Core
+    Qt6::Gui          # QColor and friends — pulled in by core/DataStructures.h
     Qt6::Widgets
     Qt6::Sql
 )

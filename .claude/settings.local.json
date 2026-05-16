@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Bash(cmake --build .)",
-      "Bash(cmake ..)"
+      "Bash(cmake ..)",
+      "Bash(mkdir -p include/__TRACKED_VAR__ src/__TRACKED_VAR__)",
+      "Bash(touch include/__TRACKED_VAR__/.gitkeep src/__TRACKED_VAR__/.gitkeep)",
+      "Bash(cd *)",
+      "Bash(git mv *)",
+      "Bash(xargs sed -i -e 's|#include \"DataStructures.h\"|#include \"core/DataStructures.h\"|g' -e 's|#include \"DatabaseManager.h\"|#include \"core/DatabaseManager.h\"|g' -e 's|#include \"DataImporter.h\"|#include \"core/DataImporter.h\"|g' -e 's|#include \"DataExporter.h\"|#include \"core/DataExporter.h\"|g' -e 's|#include \"CircularProgressBar.h\"|#include \"shared/CircularProgressBar.h\"|g' -e 's|#include \"MainWindow.h\"|#include \"shared/MainWindow.h\"|g' -e 's|#include \"SideNavigationBar.h\"|#include \"shared/SideNavigationBar.h\"|g' -e 's|#include \"HomeDashboard.h\"|#include \"shared/HomeDashboard.h\"|g' -e 's|#include \"EntityCard.h\"|#include \"courses/EntityCard.h\"|g' -e 's|#include \"UnitExpandableWidget.h\"|#include \"courses/UnitExpandableWidget.h\"|g' -e 's|#include \"SessionTaskRow.h\"|#include \"courses/SessionTaskRow.h\"|g' -e 's|#include \"EntityDetailView.h\"|#include \"courses/EntityDetailView.h\"|g' -e 's|#include \"CourseDetailView.h\"|#include \"courses/CourseDetailView.h\"|g' -e 's|#include \"ProjectDetailView.h\"|#include \"projects/ProjectDetailView.h\"|g' -e 's|#include \"ContributionHeatmap.h\"|#include \"analytics/ContributionHeatmap.h\"|g' -e 's|#include \"ActivityLogModel.h\"|#include \"analytics/ActivityLogModel.h\"|g' -e 's|#include \"AnalyticsView.h\"|#include \"analytics/AnalyticsView.h\"|g' -e 's|#include \"SettingsView.h\"|#include \"settings/SettingsView.h\"|g')",
+      "Bash(rm -rf build)",
+      "Bash(cmake -S . -B build -G \"Ninja\")",
+      "Bash(cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=C:/Qt/6.7.2/mingw_64 -DCMAKE_BUILD_TYPE=Debug)",
+      "Bash(cmake --build build)",
+      "Bash(cmake -S . -B build -G \"Ninja\" -DCMAKE_PREFIX_PATH=\"C:/Qt/6.7.2/mingw_64\" -DCMAKE_BUILD_TYPE=Debug)"
     ]
   }
 }

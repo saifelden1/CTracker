@@ -154,7 +154,7 @@ sequenceDiagram
 
 ## Components and Interfaces
 
-### Component 1: MainWindow
+### Component 1: MainWindow  *(owning folder: `shared/`)*
 
 **Purpose**: Main application container managing the side navigation and stacked widget content area.
 
@@ -200,7 +200,7 @@ private:
 - Load and apply QSS theme styling
 - Handle application-wide signals
 
-### Component 2: SideNavigationBar
+### Component 2: SideNavigationBar  *(owning folder: `shared/`)*
 
 **Purpose**: Vertical navigation bar with icon buttons for switching between main views.
 
@@ -231,7 +231,7 @@ private:
 - Emit navigation signals on button click
 - Highlight currently active navigation item
 
-### Component 3: HomeDashboard
+### Component 3: HomeDashboard  *(owning folder: `shared/`)*
 
 **Purpose**: Dashboard displaying all active courses and projects as interactive cards with circular progress indicators.
 
@@ -271,7 +271,7 @@ private:
 - Create EntityCard widgets with circular progress bars
 - Handle card click events for navigation to detail views
 
-### Component 4: EntityCard
+### Component 4: EntityCard  *(owning folder: `courses/`)*
 
 **Purpose**: Card widget displaying a course or project with custom-drawn circular progress bar.
 
@@ -317,7 +317,7 @@ private:
 - Emit click signal for navigation
 - Provide hover feedback
 
-### Component 5: CircularProgressBar
+### Component 5: CircularProgressBar  *(owning folder: `shared/`)*
 
 **Purpose**: Custom-painted widget showing progress as a circular arc using QPainter.
 
@@ -371,7 +371,7 @@ private:
 - Animate progress changes smoothly
 - Provide customizable appearance properties
 
-### Component 6: ContributionHeatmap
+### Component 6: ContributionHeatmap  *(owning folder: `analytics/`)*
 
 **Purpose**: GitHub-style 52-week contribution grid visualizing study/work intensity.
 
@@ -434,7 +434,7 @@ private:
 - Handle hover events for day tooltips
 - Support year navigation
 
-### Component 7: UnitExpandableWidget
+### Component 7: UnitExpandableWidget  *(owning folder: `courses/`)*
 
 **Purpose**: Expandable/collapsible widget containing sessions/tasks with progress sliders.
 
@@ -489,7 +489,7 @@ private:
 - Calculate and display overall unit progress
 - Handle inline editing and slider events
 
-### Component 8: SessionTaskRow
+### Component 8: SessionTaskRow  *(owning folder: `courses/`)*
 
 **Purpose**: Individual session/task row with name label and progress slider.
 
@@ -541,7 +541,7 @@ private:
 - Emit progress change events on slider release
 - Support double-click for name editing
 
-### Component 9: DatabaseManager
+### Component 9: DatabaseManager  *(owning folder: `core/`)*
 
 **Purpose**: Centralized database access layer managing SQLite operations.
 
@@ -636,7 +636,7 @@ struct ActivityLogEntry {
 - Emit signals for data changes
 - Handle bulk import/export operations
 
-### Component 10: ActivityLogModel
+### Component 10: ActivityLogModel  *(owning folder: `analytics/`)*
 
 **Purpose**: Model for accessing and processing activity log data for analytics.
 
