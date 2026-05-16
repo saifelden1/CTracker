@@ -1,6 +1,6 @@
 # Design Document: CTracker
 
-> **Versioning note**: This document describes the *full* v2 design. The implementation plan (`tasks.md`) is now a single linear sequence (no v1 → v2 split); the "Expansion" sub-sections in this document are retained for historical context but are no longer treated as a separate phase.
+> **Versioning note**: The implementation plan (`tasks.md`) uses a single linear sequence where all schema tables are instantiated immediately. The "Expansion" sub-sections in this document refer to newer features that are now built directly.
 >
 > **Source-tree convention (added with the merged plan)**: implementation files live under feature-grouped folders. `include/` and `src/` each contain `core/`, `shared/`, `courses/`, `projects/`, `todos/`, `pomodoro/`, `analytics/`, `calendar/`, `settings/`. Rule: *one folder per top-level feature; `core/` for the data layer; `shared/` for cross-feature widgets and chrome*. Cross-folder references use the form `#include "feature/Foo.h"` from the single include root.
 >
@@ -273,7 +273,7 @@ private:
 
 ### Component 4: EntityCard  *(owning folder: `courses/`)*
 
-**Purpose**: Card widget displaying a course or project with custom-drawn circular progress bar.
+**Purpose**: Card widget displaying a course or project with custom-drawn circular progress bar, category indicator, and conditional status badge.
 
 **Interface**:
 ```cpp
@@ -289,6 +289,11 @@ public:
     void setProgress(int percentage);
     void setName(const QString& name);
     
+    // v2 additions
+    void setCategory(const CategoryData& cat);
+    void clearCategory();
+    void setStatus(const QString& status);
+
 signals:
     void clicked(int entityId, EntityType type);
     
@@ -296,19 +301,23 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
     void enterEvent(QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
     
 private:
     void setupUi();
-    void applyStyle();
+    void positionOverlays();
     
     int m_entityId;
     EntityType m_type;
     QString m_name;
     int m_progress;
+    QString m_status;
     
     CircularProgressBar* m_progressBar;
     QLabel* m_nameLabel;
     QLabel* m_typeLabel;
+    CategoryPill* m_categoryPill;
+    QLabel* m_statusBadge;
 };
 ```
 
@@ -748,7 +757,7 @@ struct ActivityLogSchema {
 ### In-Memory Data Models
 
 ```cpp
-// Entity data for courses and projects (extended for v2)
+    // Entity data for courses and projects
 struct EntityData {
     int id;
     QString name;
@@ -757,7 +766,7 @@ struct EntityData {
     int overallProgress;
     QList<UnitData> units;
 
-    // v2 additions — populated by LEFT JOIN to Categories
+    // Populated by LEFT JOIN to Categories
     int categoryId = -1;       // -1 = no category assigned
     QString status = "active"; // "active" | "paused" | "completed"
     QString categoryName;      // empty when categoryId == -1

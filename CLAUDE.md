@@ -48,7 +48,7 @@ The `.ai/specs/` folder is the **source of truth** for project state. **Every ch
   - `.ui` (Qt Designer) → static layouts only: `MainWindow` frame, `SettingsView`, `AnalyticsView` skeleton.
   - Pure C++ → all custom widgets.
 - **Theme palette (canonical, matches `design/`):** background `#1a1d24` / elevated `#1f2229` / surface `#252932`; sidebar `#16181d`; primary accent `#10b981`; text `#e4e6eb`; borders `#2d323d`.
-- **Hierarchy:** Entity (Course/Project) → Units → Sessions/Tasks → ActivityLog (cascade-delete on every FK). Schema is versioned (`SchemaInfo`); v2 adds Categories, ProjectMeta, Todos, PomodoroSessions, CalendarDayDetails, Settings.
+- **Hierarchy:** Entity (Course/Project) → Units → Sessions/Tasks → ActivityLog (cascade-delete on every FK). Schema includes core tables alongside Categories, ProjectMeta, Todos, PomodoroSessions, CalendarDayDetails, Settings.
 
 ## 5a. Visual reference: `design/` is reference-only
 

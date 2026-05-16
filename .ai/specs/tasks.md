@@ -13,7 +13,7 @@
 > - **Every task below is implemented in Qt 6 / C++17 / QSS.** No JSX/Tailwind/Radix/Recharts code is ported; their Qt-native equivalents are used.
 > - SVG icons exported from the design source are reused; everything else is re-implemented in C++.
 >
-> **Plan shape:** this file replaces the old "Phase 1–9 + Expansion" split. The two passes are merged into a single linear sequence so each component is built once, in its final v2 form. Tasks already finished against the old plan are kept ticked.
+> **Plan shape:** this file replaces the old split-phase approach. The implementation is now a single linear sequence so each component is built once, in its final unified form. Tasks already finished against the old plan are kept ticked.
 
 ---
 
@@ -65,9 +65,10 @@ Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into f
 
 ---
 
-## Phase 2: Database Layer (`core/DatabaseManager`) — v2 schema in one shot
+## Phase 2: Database Layer (`core/DatabaseManager`) — Unified schema in one shot
 
-> Rationale for the merge: every Phase-7 view (HomeDashboard stats row, paused-course filter, TodoView, PomodoroView, CalendarDayDetails) depends on the v2 tables. Building v1-only and migrating later would force two passes over `DatabaseManager`.
+> Rationale for the unified schema: every view (HomeDashboard stats row, paused-course filter, TodoView, PomodoroView, CalendarDayDetails) depends on the comprehensive 10-table schema. Building incrementally and migrating later would force multiple passes over `DatabaseManager`.
+
 
 ### Task 2.1: Singleton Setup — DONE
 - [x] `core/DatabaseManager.h` with `static instance()` and private ctor
@@ -89,32 +90,16 @@ Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into f
 ### Task 2.4 → 2.7: Entity / Unit / Session-Task / ActivityLog CRUD — DONE
 - [x] All v1 CRUD methods implemented and emitting `dataChanged()`
 
-### Task 2.8: Schema v2 — Migration & versioning
-- [x] Create `SchemaInfo(Key TEXT PRIMARY KEY, Value TEXT NOT NULL)` on `initialize()` if missing
-- [x] Seed `('schema_version','2')` after a successful `migrate(<v, 2)` (covers both fresh installs and v1 upgrades — single code path)
-- [x] Implement `int currentSchemaVersion()`
-- [x] Implement `bool migrate(int from, int to)` dispatching ordered migrations inside a single transaction
-- [x] Migration `1 → 2` is idempotent: `columnExists()` checks before each `ALTER`, `CREATE … IF NOT EXISTS` for tables/indexes, `INSERT OR IGNORE` for seed rows
+### Task 2.8: Unified Schema
+- [x] Integrate Phase 2 tables directly into \createTables()\: \CoursesProjects\ created with \CategoryID\ and \Status\, and all new tables/indexes added natively.
+- [x] Remove old migration logic completely (`SchemaInfo`, `migrate()`, `currentSchemaVersion()`, `columnExists()`).
 
-### Task 2.9: New v2 tables (created idempotently)
-- [x] `Categories(ID, Name UNIQUE, Color TEXT NOT NULL, CreatedAt)`
-- [x] `ProjectMeta(ProjectID PK → CoursesProjects, Description, Priority CHECK IN ('high','medium','low'), Deadline, TeamJson, LinksJson)` — `ON DELETE CASCADE`
-- [x] `Todos(ID, Title, Completed INT, Priority, CreatedAt, CompletedAt)`
-- [x] `PomodoroSessions(ID, CourseID NULL → CoursesProjects ON DELETE SET NULL, DurationMinutes, CompletedAt, Mode CHECK IN ('work','break'))`
-- [x] `CalendarDayDetails(Date TEXT PRIMARY KEY, TodoJson, CompletedJson, Notes)`
-- [x] `Settings(Key TEXT PRIMARY KEY, Value TEXT NOT NULL)`
-- [x] Indexes: `idx_activitylog_date`, `idx_pomodoro_date`, `idx_todos_completed`
+### Task 2.9: Seed defaults
+- [x] Five default \Categories\: Algorithms \#10b981\, Web Development \#3b82f6\, Machine Learning \#8b5cf6\, Systems \#f59e0b\, Security \#ec4899\
+- [x] Default \Settings\: \pomodoro.workMinutes=25\, \pomodoro.breakMinutes=5\, \
+otifications.enabled=1\, \sound.enabled=1\, \courses.autoPauseDays=30\
 
-### Task 2.10: `CoursesProjects` column additions
-- [x] `CategoryID INTEGER NULL REFERENCES Categories(ID) ON DELETE SET NULL`
-- [x] `Status TEXT NOT NULL DEFAULT 'active' CHECK(Status IN ('active','paused','completed'))`
-- [x] Both guarded by a `pragma_table_info`-driven column-exists check
-
-### Task 2.11: Seed defaults
-- [x] Five default `Categories`: Algorithms `#10b981`, Web Development `#3b82f6`, Machine Learning `#8b5cf6`, Systems `#f59e0b`, Security `#ec4899`
-- [x] Default `Settings`: `pomodoro.workMinutes=25`, `pomodoro.breakMinutes=5`, `notifications.enabled=1`, `sound.enabled=1`, `courses.autoPauseDays=30`
-
-> **Build status:** clean `cmake --build` passes (12/12 targets after Phase 2 changes). Runtime verification (fresh-install ↑ to v2, v1 → v2 upgrade, idempotency of double-migrate) is queued in **Task 9.2** which is purpose-built for that.
+> **Build status:** clean \cmake --build\ passes.
 
 ---
 
@@ -157,52 +142,54 @@ Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into f
 - [x] Entity / Unit / Session-Task / ActivityLog CRUD
 
 ### Task 4.2: Category CRUD
-- [ ] `int addCategory(const QString& name, const QColor& color)`
-- [ ] `bool renameCategory(int id, const QString& newName)`
-- [ ] `bool setCategoryColor(int id, const QColor& color)`
-- [ ] `bool removeCategory(int id)` — sets `CategoryID = NULL` on dependent entities
-- [ ] `QList<CategoryData> fetchAllCategories()` — `LEFT JOIN CoursesProjects` to compute `entityCount`
-- [ ] `bool assignCategory(int entityId, int categoryId)` (`categoryId = -1` clears)
+- [x] `int addCategory(const QString& name, const QColor& color)`
+- [x] `bool renameCategory(int id, const QString& newName)`
+- [x] `bool setCategoryColor(int id, const QColor& color)`
+- [x] `bool removeCategory(int id)` — sets `CategoryID = NULL` on dependent entities (handled by Phase 2.10 FK rule `ON DELETE SET NULL`; no extra code needed)
+- [x] `QList<CategoryData> fetchAllCategories()` — `LEFT JOIN CoursesProjects` to compute `entityCount`
+- [x] `bool assignCategory(int entityId, int categoryId)` (`categoryId = -1` clears via typed-NULL QVariant)
 
 ### Task 4.3: Course status (active/paused/completed)
-- [ ] `bool setCourseStatus(int courseId, const QString& status)`
-- [ ] `QString getCourseStatus(int courseId)`
-- [ ] `fetchAllCourses()`/`fetchAllProjects()` updated to include `status`, `categoryId`, `categoryName`, `categoryColor` via `LEFT JOIN Categories`
+- [x] `bool setCourseStatus(int courseId, const QString& status)` — soft-validates against `{active,paused,completed}` before SQL
+- [x] `QString getCourseStatus(int courseId)`
+- [x] `fetchAllCourses()`/`fetchAllProjects()` already include `status`, `categoryId`, `categoryName`, `categoryColor` via `kEntitySelectSql` (rewritten in Phase 3.2)
 
 ### Task 4.4: ProjectMeta CRUD
-- [ ] `bool upsertProjectMeta(const ProjectMetaData& meta)`
-- [ ] `ProjectMetaData getProjectMeta(int projectId)` — returns defaults if no row exists
-- [ ] Convenience setters: `setProjectPriority`, `setProjectDeadline`, `setProjectTeam`, `setProjectLinks`
+- [x] `bool upsertProjectMeta(const ProjectMetaData& meta)` — INSERT OR REPLACE on PK; JSON-encodes team/links
+- [x] `ProjectMetaData getProjectMeta(int projectId)` — returns defaults (with projectId stamped) if no row exists
+- [x] Convenience setters: `setProjectPriority`, `setProjectDeadline`, `setProjectTeam`, `setProjectLinks` — read-modify-write through upsert
 
 ### Task 4.5: Todo CRUD
-- [ ] `int addTodo(const QString& title, const QString& priority)`
-- [ ] `bool toggleTodoCompleted(int id)`
-- [ ] `bool setTodoPriority(int id, const QString& priority)`
-- [ ] `bool removeTodo(int id)`
-- [ ] `QList<TodoData> fetchActiveTodos()` / `fetchCompletedTodos()`
-- [ ] `int countCompletedTodosOn(const QDate& date)`
+- [x] `int addTodo(const QString& title, const QString& priority)`
+- [x] `bool toggleTodoCompleted(int id)` — transactional flip + CompletedAt stamp/clear
+- [x] `bool setTodoPriority(int id, const QString& priority)`
+- [x] `bool removeTodo(int id)`
+- [x] `QList<TodoData> fetchActiveTodos()` (priority-ranked) / `fetchCompletedTodos()` (recency-ordered)
+- [x] `int countCompletedTodosOn(const QDate& date)`
 
 ### Task 4.6: Pomodoro Sessions
-- [ ] `int insertPomodoroSession(int courseId, int durationMin, const QString& mode)`
-- [ ] `QList<PomodoroSessionData> fetchRecentSessions(int limit)`
-- [ ] `QList<PomodoroSessionData> fetchSessionsOn(const QDate& date)`
-- [ ] `int totalMinutesOn(const QDate& date)`
+- [x] `int insertPomodoroSession(int courseId, int durationMin, const QString& mode)` — `courseId == -1` stored as NULL
+- [x] `QList<PomodoroSessionData> fetchRecentSessions(int limit)` — shared `kPomodoroSelectSql` join, resolves CourseName
+- [x] `QList<PomodoroSessionData> fetchSessionsOn(const QDate& date)`
+- [x] `int totalMinutesOn(const QDate& date)` — sums work-mode rows only
 
 ### Task 4.7: Calendar Day Details
-- [ ] `CalendarDayData getDay(const QDate& date)` — empty struct if missing
-- [ ] `bool upsertDay(const CalendarDayData& data)`
-- [ ] `QSet<QDate> datesWithContent(const QDate& from, const QDate& to)`
+- [x] `CalendarDayData getDay(const QDate& date)` — empty struct (date stamped) if missing
+- [x] `bool upsertDay(const CalendarDayData& data)` — INSERT OR REPLACE on PK; JSON-encodes lists
+- [x] `QSet<QDate> datesWithContent(const QDate& from, const QDate& to)` — filters empty `[]`/`""` payloads in SQL
 
 ### Task 4.8: Settings k/v + typed accessors
-- [ ] `QString getSetting(const QString& key, const QString& defaultValue = {})`
-- [ ] `bool setSetting(const QString& key, const QString& value)`
-- [ ] Convenience: `int getSettingInt`, `bool getSettingBool`
-- [ ] Typed wrappers: `ProfileData getProfile()` / `bool setProfile(const ProfileData&)`; same for `PreferencesData`
+- [x] `QString getSetting(const QString& key, const QString& defaultValue = {})`
+- [x] `bool setSetting(const QString& key, const QString& value)` — does NOT emit dataChanged (caller batches)
+- [x] Convenience: `int getSettingInt`, `bool getSettingBool`
+- [x] Typed wrappers: `ProfileData getProfile()` / `bool setProfile(const ProfileData&)` (keys `profile.*`); same for `PreferencesData` (reuses Phase 2.11 seeded keys)
 
 ### Task 4.9: Persisted Pomodoro timer state (NEW — gap-fill)
-- [ ] `PomodoroTimerState getPomodoroState()` (reads from `Settings` via reserved keys `pomodoro.state.*`)
-- [ ] `bool savePomodoroState(const PomodoroTimerState&)`
-- [ ] Cleared on `reset()` and on entity deletion that nukes `CourseID`
+- [x] `PomodoroTimerState getPomodoroState()` (reads from `Settings` via reserved keys `pomodoro.state.*` — no collision with the seeded `pomodoro.workMinutes`/`pomodoro.breakMinutes` keys)
+- [x] `bool savePomodoroState(const PomodoroTimerState&)` — transactional batch write, no dataChanged emit
+- [x] Cleared on entity deletion that nukes `CourseID`: `removeCourse()` now resets `pomodoro.state.courseId` to `-1` before the DELETE if the timer was attached to that course. (`reset()` semantics owned by `PomodoroTimerWidget` in Phase 6.11.) Timer state lives in `Settings` k/v with no FK, so the cleanup is explicit rather than cascade.
+
+> **Build status:** clean `cmake --build` passes (12/12 targets after Phase 4 changes). Runtime verification (CRUD round-trips, JSON empty-list handling, category SET NULL cascade, pomodoro state resume) is queued in **Task 9.2**.
 
 ---
 
@@ -220,23 +207,23 @@ Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into f
 - [x] JSON export round-trips with importer
 
 ### Task 5.4: CategoryModel (`shared/`)
-- [ ] `QAbstractListModel` exposing `(id, name, color, entityCount)` via roles
-- [ ] `refresh()` slot wired to `DatabaseManager::dataChanged`
+- [x] `QAbstractListModel` exposing `(id, name, color, entityCount)` via roles
+- [x] `refresh()` slot wired to `DatabaseManager::dataChanged`
 
 ### Task 5.5: TodoModel (`todos/`)
-- [ ] Two filtered views (active vs. completed) from a single underlying list
-- [ ] Signals: `activeCountChanged(int)`, `completedCountChanged(int)`
-- [ ] Auto-refresh on `dataChanged`
+- [x] Two filtered views (active vs. completed) from a single underlying list
+- [x] Signals: `activeCountChanged(int)`, `completedCountChanged(int)`
+- [x] Auto-refresh on `dataChanged`
 
 ### Task 5.6: HeatmapAggregator (`analytics/`)
-- [ ] `QMap<QDate, ContributionHeatmap::DayData> aggregate(from, to, Mode)`
-- [ ] `Mode::RecentBuckets`: `count = #ActivityLog + #completed Todos + #completed Pomodoro`; intensity bucketed `0 / 1 / 2-3 / 4-6 / 7+`
-- [ ] `Mode::NormalizedRange`: `intensity = floor((count / max) * 4)` bounded `[0,4]`
-- [ ] Re-aggregates on `dataChanged` from ActivityLog / Todos / PomodoroSessions
+- [x] `QMap<QDate, ContributionHeatmap::DayData> aggregate(from, to, Mode)`
+- [x] `Mode::RecentBuckets`: `count = #ActivityLog + #completed Todos + #completed Pomodoro`; intensity bucketed `0 / 1 / 2-3 / 4-6 / 7+`
+- [x] `Mode::NormalizedRange`: `intensity = floor((count / max) * 4)` bounded `[0,4]`
+- [x] Re-aggregates on `dataChanged` from ActivityLog / Todos / PomodoroSessions
 
 ### Task 5.7: AnalyticsSummary computer (`analytics/`)
-- [ ] Free function (or static method) producing an `AnalyticsSummary` from `DatabaseManager` queries
-- [ ] Implements `dayStreak()`, `monthHoursStudied()`, `avgSessionsPerDay(7)`, `weekOverWeekPct()`
+- [x] Free function (or static method) producing an `AnalyticsSummary` from `DatabaseManager` queries
+- [x] Implements `dayStreak()`, `monthHoursStudied()`, `avgSessionsPerDay(7)`, `weekOverWeekPct()`
 
 ---
 
@@ -256,58 +243,58 @@ Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into f
 
 ### Task 6.5: EntityCard (`courses/`) — DONE for v1; needs v2 additions
 - [x] CircularProgressBar + name + type badge, fixed 160×180 px
-- [ ] **v2 addition:** embedded `CategoryPill` slot (top-left) — show only when `categoryId >= 0`
-- [ ] **v2 addition:** "Paused" status badge (top-right) when `status == "paused"`, muted color
-- [ ] Spec write-back: add the two new sub-elements to design.md "Component 4: EntityCard"
+- [x] **v2 addition:** embedded `CategoryPill` slot (top-left) — show only when `categoryId >= 0`
+- [x] **v2 addition:** "Paused" status badge (top-right) when `status == "paused"`, muted color
+- [x] Spec write-back: add the two new sub-elements to design.md "Component 4: EntityCard"
 
 ### Task 6.6: StatsCard (`shared/`)
-- [ ] `QFrame` with icon (top-right) + title + big value + subtitle + optional badge
-- [ ] `lg` border-radius, surface background, hover shadow
-- [ ] API: `setTitle`, `setValue`, `setSubtitle`, `setIcon`, `setBadgeText`
+- [x] `QFrame` with icon (top-right) + title + big value + subtitle + optional badge
+- [x] `lg` border-radius, surface background, hover shadow
+- [x] API: `setTitle`, `setValue`, `setSubtitle`, `setIcon`, `setBadgeText`
 
 ### Task 6.7: CategoryPill (`shared/`)
-- [ ] Small horizontal pill: 8 px colored dot + name
-- [ ] Background = category color at 15% alpha; `sm` radius
-- [ ] `setCategory(const CategoryData&)` / `clearCategory()`
+- [x] Small horizontal pill: 8 px colored dot + name
+- [x] Background = category color at 15% alpha; `sm` radius
+- [x] `setCategory(const CategoryData&)` / `clearCategory()`
 
 ### Task 6.8: CalendarWidget (`calendar/`)
-- [ ] Inherit `QWidget` (do **not** use `QCalendarWidget` — we need custom indicators)
-- [ ] Header `◀ Month Year ▶`, 7×6 grid with single-letter day labels (S M T W T F S)
-- [ ] Current day highlighted in primary accent ring
-- [ ] Indicator dot under every date in `m_indicatorDates`
-- [ ] Signals: `dateClicked(QDate)`, `monthChanged(int year, int month)`
-- [ ] Keyboard arrow navigation
+- [x] Inherit `QWidget` (do **not** use `QCalendarWidget` — we need custom indicators)
+- [x] Header `◀ Month Year ▶`, 7×6 grid with single-letter day labels (S M T W T F S)
+- [x] Current day highlighted in primary accent ring
+- [x] Indicator dot under every date in `m_indicatorDates`
+- [x] Signals: `dateClicked(QDate)`, `monthChanged(int year, int month)`
+- [x] Keyboard arrow navigation
 
 ### Task 6.9: DayDetailsPanel (`calendar/`)
-- [ ] Header: selected date + close `×` button → emits `closed()`
-- [ ] Three stacked sections: To Do (list + add input), Completed (strikethrough list), Notes (`QTextEdit`)
-- [ ] Empty state when `clear()` is called
-- [ ] Signals: `todoAdded(date, text)`, `todoToggled(date, idx, completed)`, `notesChanged(date, text)`
+- [x] Header: selected date + close `×` button → emits `closed()`
+- [x] Three stacked sections: To Do (list + add input), Completed (strikethrough list), Notes (`QTextEdit`)
+- [x] Empty state when `clear()` is called
+- [x] Signals: `todoAdded(date, text)`, `todoToggled(date, idx, completed)`, `notesChanged(date, text)`
 
 ### Task 6.10: TodoRow (`todos/`)
-- [ ] Layout: checkbox | title | priority badge | trash button
-- [ ] Completed state = 60% opacity + strikethrough; hover bg = surface-hover
-- [ ] Signals: `completedToggled(int id, bool)`, `deleteRequested(int id)`
+- [x] Layout: checkbox | title | priority badge | trash button
+- [x] Completed state = 60% opacity + strikethrough; hover bg = surface-hover
+- [x] Signals: `completedToggled(int id, bool)`, `deleteRequested(int id)`
 
 ### Task 6.11: PomodoroTimerWidget (`pomodoro/`)
-- [ ] Embeds `CircularProgressBar` sized 256 px
-- [ ] Drives a `QTimer` at 1 Hz; computes `remainingSeconds` and the ring %
-- [ ] Center label shows `MM:SS`
-- [ ] API: `setMode`, `setWorkDurationMinutes`, `setBreakDurationMinutes`, `start`, `pause`, `resume`, `reset`
-- [ ] Holds a `PomodoroTimerState` mirror in memory; emits `tick`, `stateChanged`, `completed`, `modeChanged`
-- [ ] On `completed`, emits + auto-switches mode + resets
-- [ ] Restores from `DatabaseManager::getPomodoroState()` on construction (NEW — enables cross-session resume)
+- [x] Embeds `CircularProgressBar` sized 256 px
+- [x] Drives a `QTimer` at 1 Hz; computes `remainingSeconds` and the ring %
+- [x] Center label shows `MM:SS`
+- [x] API: `setMode`, `setWorkDurationMinutes`, `setBreakDurationMinutes`, `start`, `pause`, `resume`, `reset`
+- [x] Holds a `PomodoroTimerState` mirror in memory; emits `tick`, `stateChanged`, `completed`, `modeChanged`
+- [x] On `completed`, emits + auto-switches mode + resets
+- [x] Restores from `DatabaseManager::getPomodoroState()` on construction (NEW — enables cross-session resume)
 
 ### Task 6.12: ProjectCard (`projects/`)
-- [ ] Layout: name (semibold) + description (2-line truncate) + priority badge + deadline badge + horizontal progress bar + "X/Y tasks" + team-icon + member count
-- [ ] `setDeadline()` computes days-left and applies red ≤ 3 d / amber ≤ 7 d / gray otherwise
-- [ ] `mousePressEvent` emits `clicked(int projectId)`
+- [x] Layout: name (semibold) + description (2-line truncate) + priority badge + deadline badge + horizontal progress bar + "X/Y tasks" + team-icon + member count
+- [x] `setDeadline()` computes days-left and applies red ≤ 3 d / amber ≤ 7 d / gray otherwise
+- [x] `mousePressEvent` emits `clicked(int projectId)`
 
 ### Task 6.13: CoursesFilterBar (`courses/`)
-- [ ] Layout: search `QLineEdit` (left) | Filter toggle button + "Add New" button (right)
-- [ ] Collapsible filter panel: Category dropdown + Status dropdown
-- [ ] Active-filter badges with `×` to remove + "Clear all" link
-- [ ] Emits `filterChanged(CourseFilter)` (debounced 200 ms on search edits) and `addNewRequested()`
+- [x] Layout: search `QLineEdit` (left) | Filter toggle button + "Add New" button (right)
+- [x] Collapsible filter panel: Category dropdown + Status dropdown
+- [x] Active-filter badges with `×` to remove + "Clear all" link
+- [x] Emits `filterChanged(CourseFilter)` (debounced 200 ms on search edits) and `addNewRequested()`
 
 ---
 
@@ -318,7 +305,7 @@ Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into f
 - [ ] `setActiveButton(int)`, `navigationRequested(int)` signal
 - [ ] Active button uses left accent border in primary green
 
-### Task 7.2: HomeDashboard (`shared/`) — final v2 form (no v1 throwaway)
+### Task 7.2: HomeDashboard (`shared/`) — final unified form
 - [ ] Top row: 3 × `StatsCard` (Active Courses w/ paused badge, Projects w/ due-soon sub-count, Completion Rate)
 - [ ] Lower section: `CalendarWidget` (left) + stacked `DayDetailsPanel` & `ContributionHeatmap` (right)
 - [ ] Heatmap configured in `RecentBuckets` mode for last 12 weeks (84 days)
@@ -485,3 +472,4 @@ Goal: move every existing `.h`/`.cpp` from the flat `include/` and `src/` into f
 5. **Phase 7** — every view built once in its final form.
 6. **Phase 8** — styling, charts/svg CMake, error wiring.
 7. **Phase 9** — full test pass.
+

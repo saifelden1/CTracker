@@ -1,56 +1,123 @@
 #include "shared/SideNavigationBar.h"
 
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QPushButton>
 #include <QButtonGroup>
+#include <QLabel>
 #include <QStyle>
-#include <QSpacerItem>
+
+// Task 7.1: SideNavigationBar — 256 px fixed width, header, 7 nav buttons, footer.
+// Active button uses left accent border (applied via QSS with [active="true"] selector).
 
 SideNavigationBar::SideNavigationBar(QWidget* parent)
     : QWidget(parent) {
     setObjectName("sideNavigationBar");
-    setFixedWidth(60);
-    setupButtons();
+    setFixedWidth(256);
+    setupUi();
 }
 
-QPushButton* SideNavigationBar::makeNavButton(const QString& glyph, const QString& tooltip) {
-    auto* btn = new QPushButton(glyph, this);
+QPushButton* SideNavigationBar::makeNavButton(const QString& icon,
+                                               const QString& label,
+                                               const QString& tooltip) {
+    auto* btn = new QPushButton(this);
     btn->setObjectName("navButton");
     btn->setToolTip(tooltip);
-    btn->setFlat(true);
     btn->setCheckable(true);
-    btn->setFixedSize(44, 44);
     btn->setCursor(Qt::PointingHandCursor);
+    btn->setMinimumHeight(48);
+
+    // Layout: icon (left) + label (center-left)
+    auto* layout = new QHBoxLayout(btn);
+    layout->setContentsMargins(16, 8, 16, 8);
+    layout->setSpacing(12);
+
+    auto* iconLabel = new QLabel(icon, btn);
+    iconLabel->setFixedSize(24, 24);
+    iconLabel->setAlignment(Qt::AlignCenter);
+
+    auto* textLabel = new QLabel(label, btn);
+    textLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+
+    layout->addWidget(iconLabel);
+    layout->addWidget(textLabel, 1);
+
     return btn;
 }
 
-void SideNavigationBar::setupButtons() {
+void SideNavigationBar::setupUi() {
     auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(8, 12, 8, 12);
-    layout->setSpacing(6);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
 
+    // ── Header: CTracker logo + name ──
+    m_header = new QWidget(this);
+    m_header->setObjectName("sideNavHeader");
+    m_header->setFixedHeight(64);
+    auto* headerLayout = new QHBoxLayout(m_header);
+    headerLayout->setContentsMargins(16, 12, 16, 12);
+    headerLayout->setSpacing(8);
+
+    auto* logoLabel = new QLabel(QStringLiteral("\u2302"), m_header);  // ⌂ placeholder
+    logoLabel->setObjectName("sideNavLogo");
+    logoLabel->setFixedSize(32, 32);
+    logoLabel->setAlignment(Qt::AlignCenter);
+
+    auto* appNameLabel = new QLabel(QStringLiteral("CTracker"), m_header);
+    appNameLabel->setObjectName("sideNavAppName");
+
+    headerLayout->addWidget(logoLabel);
+    headerLayout->addWidget(appNameLabel, 1);
+
+    layout->addWidget(m_header);
+
+    // ── Navigation buttons ──
     m_group = new QButtonGroup(this);
     m_group->setExclusive(true);
 
-    // Order matches the Page enum; glyphs are placeholders until SVG icons land in Phase 8.3.2.
-    const struct { const char* glyph; const char* tip; } defs[PageCount] = {
-        { "\u2302", "Home"      },   // ⌂
-        { "\u2630", "Courses"   },   // ☰
-        { "\u25A4", "Projects"  },   // ▤
-        { "\u2261", "Analytics" },   // ≡
-        { "\u2699", "Settings"  }    // ⚙
+    // Order matches the Page enum; icons are Unicode placeholders until Phase 8.4 SVG icons.
+    const struct { const char* icon; const char* label; const char* tip; } defs[PageCount] = {
+        { "\u2302", "Home",      "Home Dashboard"       },  // ⌂
+        { "\u{1F4DA}", "Courses",   "Courses"              },  // 📚
+        { "\u{1F4C1}", "Projects",  "Projects"             },  // 📁
+        { "\u2611", "To-Do",     "To-Do List"           },  // ☑
+        { "\u23F1", "Pomodoro",  "Pomodoro Timer"       },  // ⏱
+        { "\u{1F4CA}", "Analytics", "Analytics & Reports"  },  // 📊
+        { "\u2699", "Settings",  "Settings"             }   // ⚙
     };
 
     for (int i = 0; i < PageCount; ++i) {
-        QPushButton* btn = makeNavButton(QString::fromUtf8(defs[i].glyph),
+        QPushButton* btn = makeNavButton(QString::fromUtf8(defs[i].icon),
+                                         QString::fromLatin1(defs[i].label),
                                          QString::fromLatin1(defs[i].tip));
         m_buttons.append(btn);
         m_group->addButton(btn, i);
-        layout->addWidget(btn, 0, Qt::AlignHCenter);
+        layout->addWidget(btn);
     }
 
     layout->addStretch(1);
 
+    // ── Footer: user profile chip (placeholder) ──
+    m_footer = new QWidget(this);
+    m_footer->setObjectName("sideNavFooter");
+    m_footer->setFixedHeight(56);
+    auto* footerLayout = new QHBoxLayout(m_footer);
+    footerLayout->setContentsMargins(16, 8, 16, 8);
+    footerLayout->setSpacing(8);
+
+    auto* avatarLabel = new QLabel(QStringLiteral("\u{1F464}"), m_footer);  // 👤
+    avatarLabel->setFixedSize(32, 32);
+    avatarLabel->setAlignment(Qt::AlignCenter);
+
+    auto* userLabel = new QLabel(QStringLiteral("User"), m_footer);
+    userLabel->setObjectName("sideNavUserName");
+
+    footerLayout->addWidget(avatarLabel);
+    footerLayout->addWidget(userLabel, 1);
+
+    layout->addWidget(m_footer);
+
+    // ── Wire signals ──
     connect(m_group, &QButtonGroup::idClicked,
             this, [this](int id) {
                 setActiveButton(id);
@@ -72,6 +139,7 @@ void SideNavigationBar::setActiveButton(int index) {
             QSignalBlocker blocker(btn);
             btn->setChecked(active);
         }
+        // Property-based styling: QSS can target QPushButton[active="true"]
         btn->setProperty("active", active);
         btn->style()->unpolish(btn);
         btn->style()->polish(btn);

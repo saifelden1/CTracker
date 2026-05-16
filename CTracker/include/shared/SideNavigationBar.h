@@ -6,6 +6,9 @@
 class QPushButton;
 class QButtonGroup;
 
+// Task 7.1: SideNavigationBar — 256 px fixed width, 7 nav buttons,
+// header (CTracker logo + name), footer (user profile chip).
+// Active button uses left accent border in primary green.
 class SideNavigationBar : public QWidget {
     Q_OBJECT
 public:
@@ -13,9 +16,11 @@ public:
         HomePage      = 0,
         CoursesPage   = 1,
         ProjectsPage  = 2,
-        AnalyticsPage = 3,
-        SettingsPage  = 4,
-        PageCount     = 5
+        TodoPage      = 3,
+        PomodoroPage  = 4,
+        AnalyticsPage = 5,
+        SettingsPage  = 6,
+        PageCount     = 7
     };
 
     explicit SideNavigationBar(QWidget* parent = nullptr);
@@ -27,9 +32,11 @@ signals:
     void navigationRequested(int pageIndex);
 
 private:
-    void setupButtons();
-    QPushButton* makeNavButton(const QString& glyph, const QString& tooltip);
+    void setupUi();
+    QPushButton* makeNavButton(const QString& icon, const QString& label, const QString& tooltip);
 
+    QWidget*            m_header       = nullptr;
+    QWidget*            m_footer       = nullptr;
     QList<QPushButton*> m_buttons;
     QButtonGroup*       m_group        = nullptr;
     int                 m_currentIndex = HomePage;

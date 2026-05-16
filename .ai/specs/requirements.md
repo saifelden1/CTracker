@@ -234,7 +234,7 @@ CTracker is an offline Engineering Course & Project Management Suite built with 
 #### Acceptance Criteria
 
 1. IF the database connection fails, THE Application SHALL display an error dialog and exit with an error code
-2. IF the database schema is corrupted, THE Application SHALL attempt automatic migration or offer to recreate the database
+2. IF the database schema is corrupted, THE Application SHALL offer to recreate the database from scratch or restore from a backup.
 3. IF an import file has parse errors, THE Application SHALL log warnings with line numbers and continue importing valid entries
 4. IF a progress update fails, THE Application SHALL revert the slider to the previous position and show an error notification
 5. IF a rendering failure occurs in a custom widget, THE Application SHALL catch the exception and render a fallback placeholder
@@ -404,13 +404,12 @@ CTracker is an offline Engineering Course & Project Management Suite built with 
 3. ALL primary action buttons SHALL display a visible focus ring using the primary accent color at 25% opacity
 4. THE TodoView "Add a new task" input SHALL submit when the user presses Enter
 
-### Requirement 30: Data Schema Migrations
+### Requirement 30: Data Schema Initialization
 
-**User Story:** As a developer, I want a versioned schema, so that I can add new tables and columns without breaking existing user databases.
+**User Story:** As a developer, I want a well-defined initial schema, so that the database is created uniformly on first launch.
 
 #### Acceptance Criteria
 
-1. THE DatabaseManager SHALL store a `schema_version` value in a `SchemaInfo` table (or equivalent) initialised to the current version on a fresh database
-2. ON startup, THE DatabaseManager SHALL compare the on-disk version with the application's expected version and run any registered migration scripts in order to reach the expected version
-3. IF a migration fails, THE Application SHALL roll back the transaction, log the failure, and present an error dialog offering to restore from backup or recreate the database
-4. NEW tables introduced by this expansion (`Categories`, `Todos`, `PomodoroSessions`, `ProjectMeta`, `CalendarDayDetails`, `Settings`) SHALL be created idempotently via `CREATE TABLE IF NOT EXISTS`
+1. THE DatabaseManager SHALL define a comprehensive unified schema containing all 10 core tables (`CoursesProjects`, `Units`, `SessionsTasks`, `ActivityLog`, `Categories`, `Todos`, `PomodoroSessions`, `ProjectMeta`, `CalendarDayDetails`, `Settings`) straight away.
+2. ON startup, THE DatabaseManager SHALL execute idempotent `CREATE TABLE IF NOT EXISTS` statements for all tables to ensure the database is fully initialized.
+3. IF any error occurs during schema creation, THE Application SHALL log the failure and present an error dialog offering to restore from backup or recreate the database.

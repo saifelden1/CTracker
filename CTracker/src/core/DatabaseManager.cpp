@@ -6,9 +6,13 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QDebug>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QSet>
 
 // ============================================================
-//  DatabaseManager.cpp  —  Implementation
+//  DatabaseManager.cpp  �  Implementation
 // ============================================================
 
 // Initialize the static instance pointer to nullptr (no object yet)
@@ -29,7 +33,7 @@ DatabaseManager* DatabaseManager::instance()
     return s_instance;
 }
 
-// Private constructor — nothing special to do here
+// Private constructor � nothing special to do here
 DatabaseManager::DatabaseManager(QObject* parent)
     : QObject(parent)
 {}
@@ -76,24 +80,11 @@ bool DatabaseManager::initialize(const QString& dbPath)
     // Enable foreign key enforcement (SQLite disables it by default!)
     executeQuery("PRAGMA foreign_keys = ON");
 
-    // ── Step 1: build the v1 schema (idempotent) ─────────────
+    // -- Step 1: create all unified tables (idempotent) --------
     if (!createTables()) return false;
 
-    // ── Step 2: bring schema up to the latest version ────────
-    // currentSchemaVersion() returns 0 on a fresh install (no SchemaInfo
-    // row yet) OR on an older v1 database. Either way, migrate(→2) is the
-    // single code path that brings us to v2.
-    const int kTargetVersion = 2;
-    int v = currentSchemaVersion();
-    if (v < kTargetVersion) {
-        qDebug() << "[DB] Schema version" << v << "→" << kTargetVersion;
-        if (!migrate(v, kTargetVersion)) {
-            qWarning() << "[DB] Migration failed.";
-            return false;
-        }
-    } else {
-        qDebug() << "[DB] Schema already at version" << v;
-    }
+    // -- Step 2: seed defaults --------------------------------
+    if (!seedDefaults()) return false;
 
     return true;
 }
@@ -115,27 +106,42 @@ void DatabaseManager::close()
 //  createTables()
 //
 //  Runs CREATE TABLE IF NOT EXISTS for all 4 tables.
-//  This is idempotent — safe to call every time the app starts.
+//  This is idempotent � safe to call every time the app starts.
 //  If tables already exist, SQLite does nothing.
 // ============================================================
 bool DatabaseManager::createTables()
 {
     qDebug() << "[DB] Creating tables if they do not exist...";
 
-    // ── Table 1: CoursesProjects ─────────────────────────────
-    // Stores both courses AND projects. The "Type" column tells us which.
+    // -- Categories -------------------------------------------
+    // A short colour-tagged label attached to a CoursesProjects row.
+    // Name is UNIQUE so the user can't make two "Algorithms" pills.
     bool ok = executeQuery(R"(
-        CREATE TABLE IF NOT EXISTS CoursesProjects (
+        CREATE TABLE IF NOT EXISTS Categories (
             ID        INTEGER PRIMARY KEY AUTOINCREMENT,
-            Name      TEXT    NOT NULL,
-            Type      TEXT    NOT NULL CHECK(Type IN ('Course', 'Project')),
-            CreatedAt TEXT    DEFAULT CURRENT_TIMESTAMP,
-            UpdatedAt TEXT    DEFAULT CURRENT_TIMESTAMP
+            Name      TEXT    NOT NULL UNIQUE,
+            Color     TEXT    NOT NULL,
+            CreatedAt TEXT    DEFAULT CURRENT_TIMESTAMP
         )
     )");
     if (!ok) return false;
 
-    // ── Table 2: Units ───────────────────────────────────────
+    // -- CoursesProjects --------------------------------------
+    // Stores both courses AND projects. The "Type" column tells us which.
+    ok = executeQuery(R"(
+        CREATE TABLE IF NOT EXISTS CoursesProjects (
+            ID         INTEGER PRIMARY KEY AUTOINCREMENT,
+            Name       TEXT    NOT NULL,
+            Type       TEXT    NOT NULL CHECK(Type IN ('Course', 'Project')),
+            CreatedAt  TEXT    DEFAULT CURRENT_TIMESTAMP,
+            UpdatedAt  TEXT    DEFAULT CURRENT_TIMESTAMP,
+            CategoryID INTEGER NULL REFERENCES Categories(ID) ON DELETE SET NULL,
+            Status     TEXT    NOT NULL DEFAULT 'active' CHECK(Status IN ('active','paused','completed'))
+        )
+    )");
+    if (!ok) return false;
+
+    // -- Units ------------------------------------------------
     // Each Unit belongs to one Course or Project.
     // ON DELETE CASCADE: if a Course is deleted, all its Units auto-delete.
     ok = executeQuery(R"(
@@ -149,7 +155,7 @@ bool DatabaseManager::createTables()
     )");
     if (!ok) return false;
 
-    // ── Table 3: SessionsTasks ───────────────────────────────
+    // -- SessionsTasks ----------------------------------------
     // Each Session/Task belongs to one Unit.
     // CHECK constraint: progress can only be 0..100.
     ok = executeQuery(R"(
@@ -165,7 +171,7 @@ bool DatabaseManager::createTables()
     )");
     if (!ok) return false;
 
-    // ── Table 4: ActivityLog ─────────────────────────────────
+    // -- ActivityLog ------------------------------------------
     // Every time a slider is moved, one row is written here.
     // This is the raw data that powers the Contribution Heatmap.
     ok = executeQuery(R"(
@@ -182,12 +188,94 @@ bool DatabaseManager::createTables()
     )");
     if (!ok) return false;
 
+    // -- ProjectMeta ------------------------------------------
+    // 1-to-1 sidecar for the Project flavour of CoursesProjects.
+    // ProjectID is BOTH the PK and the FK  natural one-row-per-project.
+    // ON DELETE CASCADE: when the project disappears, its meta does too.
+    ok = executeQuery(R"(
+        CREATE TABLE IF NOT EXISTS ProjectMeta (
+            ProjectID   INTEGER PRIMARY KEY,
+            Description TEXT,
+            Priority    TEXT    CHECK(Priority IN ('high','medium','low')),
+            Deadline    TEXT,
+            TeamJson    TEXT,
+            LinksJson   TEXT,
+            FOREIGN KEY (ProjectID) REFERENCES CoursesProjects(ID) ON DELETE CASCADE
+        )
+    )");
+    if (!ok) return false;
+
+    // -- Todos ------------------------------------------------
+    // Standalone todo list, not tied to a course/project.
+    ok = executeQuery(R"(
+        CREATE TABLE IF NOT EXISTS Todos (
+            ID          INTEGER PRIMARY KEY AUTOINCREMENT,
+            Title       TEXT    NOT NULL,
+            Completed   INTEGER NOT NULL DEFAULT 0,
+            Priority    TEXT    CHECK(Priority IN ('high','medium','low')),
+            CreatedAt   TEXT    DEFAULT CURRENT_TIMESTAMP,
+            CompletedAt TEXT
+        )
+    )");
+    if (!ok) return false;
+
+    // -- PomodoroSessions -------------------------------------
+    // Each completed pomodoro becomes one row. CourseID is nullable
+    // (a session can be "free" / uncategorised) and SET NULL on
+    // course-delete so we keep the history but lose the link.
+    ok = executeQuery(R"(
+        CREATE TABLE IF NOT EXISTS PomodoroSessions (
+            ID              INTEGER PRIMARY KEY AUTOINCREMENT,
+            CourseID        INTEGER,
+            DurationMinutes INTEGER NOT NULL,
+            CompletedAt     TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            Mode            TEXT    NOT NULL CHECK(Mode IN ('work','break')),
+            FOREIGN KEY (CourseID) REFERENCES CoursesProjects(ID) ON DELETE SET NULL
+        )
+    )");
+    if (!ok) return false;
+
+    // -- CalendarDayDetails -----------------------------------
+    // Per-day notes/todos/completed bundles, keyed by date string.
+    // Date is TEXT in ISO 8601 (YYYY-MM-DD) so lexical order == chronological.
+    ok = executeQuery(R"(
+        CREATE TABLE IF NOT EXISTS CalendarDayDetails (
+            Date          TEXT PRIMARY KEY,
+            TodoJson      TEXT,
+            CompletedJson TEXT,
+            Notes         TEXT
+        )
+    )");
+    if (!ok) return false;
+
+    // -- Settings ---------------------------------------------
+    // Generic key/value store. Typed accessors (Task 4.8) wrap it
+    // so the UI never sees raw strings.
+    ok = executeQuery(R"(
+        CREATE TABLE IF NOT EXISTS Settings (
+            Key   TEXT PRIMARY KEY,
+            Value TEXT NOT NULL
+        )
+    )");
+    if (!ok) return false;
+
+    // -- Indexes ----------------------------------------------
+    ok = executeQuery("CREATE INDEX IF NOT EXISTS idx_activitylog_date "
+                      "ON ActivityLog(DATE(Timestamp))");
+    if (!ok) return false;
+    ok = executeQuery("CREATE INDEX IF NOT EXISTS idx_pomodoro_date "
+                      "ON PomodoroSessions(DATE(CompletedAt))");
+    if (!ok) return false;
+    ok = executeQuery("CREATE INDEX IF NOT EXISTS idx_todos_completed "
+                      "ON Todos(Completed)");
+    if (!ok) return false;
+
     qDebug() << "[DB] All tables ready.";
     return true;
 }
 
 // ============================================================
-//  executeQuery()  —  Write operations (INSERT/UPDATE/DELETE)
+//  executeQuery()  �  Write operations (INSERT/UPDATE/DELETE)
 //
 //  Using named placeholders (:param) prevents SQL injection.
 //  Example call:
@@ -214,9 +302,9 @@ bool DatabaseManager::executeQuery(const QString& sql, const QVariantMap& params
 }
 
 // ============================================================
-//  executeSelectQuery()  —  Read operations (SELECT)
+//  executeSelectQuery()  �  Read operations (SELECT)
 //
-//  Returns a list of rows; each row is a QVariantMap of col → value.
+//  Returns a list of rows; each row is a QVariantMap of col ? value.
 // ============================================================
 QList<QVariantMap> DatabaseManager::executeSelectQuery(const QString& sql,
                                                         const QVariantMap& params)
@@ -246,7 +334,7 @@ QList<QVariantMap> DatabaseManager::executeSelectQuery(const QString& sql,
     return results;
 }
 
-// ── Transaction helpers ──────────────────────────────────────
+// -- Transaction helpers --------------------------------------
 bool DatabaseManager::beginTransaction()    { return m_database.transaction(); }
 bool DatabaseManager::commitTransaction()   { return m_database.commit(); }
 bool DatabaseManager::rollbackTransaction() { return m_database.rollback(); }
@@ -278,6 +366,15 @@ int DatabaseManager::addCourse(const QString& name)  { return addEntity(name, "C
 int DatabaseManager::addProject(const QString& name) { return addEntity(name, "Project"); }
 
 bool DatabaseManager::removeCourse(int id)  {
+    // Phase 4.9 hygiene: if the persisted pomodoro timer was attached
+    // to *this* course, clear that link before deletion so the timer
+    // does not try to resume against a course that no longer exists.
+    // (Pomodoro session rows are handled by the FK SET NULL rule on
+    // PomodoroSessions.CourseID; the timer state lives in Settings
+    // k/v, which has no FK, so we clear it manually here.)
+    if (getSettingInt("pomodoro.state.courseId", -1) == id) {
+        setSetting("pomodoro.state.courseId", "-1");
+    }
     bool ok = executeQuery("DELETE FROM CoursesProjects WHERE ID = :id AND Type = 'Course'",
                            {{":id", id}});
     if (ok) emit dataChanged();
@@ -309,7 +406,7 @@ bool DatabaseManager::renameProject(int projectId, const QString& newName) {
 }
 
 // ============================================================
-//  Entity → EntityData mapping (Task 3.2)
+//  Entity ? EntityData mapping (Task 3.2)
 //
 //  v1 used `SELECT * FROM CoursesProjects`. v2 needs four more
 //  fields on every row: CategoryID, Status, CategoryName, CategoryColor.
@@ -317,7 +414,7 @@ bool DatabaseManager::renameProject(int projectId, const QString& newName) {
 //  the last two come from a LEFT JOIN onto Categories so each entity
 //  carries its colour + label pre-resolved.
 //
-//  LEFT JOIN (not INNER): an entity may have CategoryID = NULL —
+//  LEFT JOIN (not INNER): an entity may have CategoryID = NULL �
 //  it's uncategorised. We must still return that row, just with
 //  empty categoryName and invalid categoryColor.
 //
@@ -339,7 +436,7 @@ static const char* kEntitySelectSql =
     "FROM   CoursesProjects cp                "
     "LEFT   JOIN Categories cat ON cat.ID = cp.CategoryID ";
 
-// Helper to convert a joined QVariantMap row → EntityData struct.
+// Helper to convert a joined QVariantMap row ? EntityData struct.
 static EntityData rowToEntity(const QVariantMap& row) {
     EntityData e;
     e.id        = row["ID"].toInt();
@@ -349,7 +446,7 @@ static EntityData rowToEntity(const QVariantMap& row) {
 
     // v2: a NULL CategoryID becomes the -1 sentinel; everything else
     // tracks the joined Categories row when present, sensible empties
-    // when not. QColor("") is invalid — that's the right "no colour"
+    // when not. QColor("") is invalid � that's the right "no colour"
     // value for the UI to test against with isValid().
     const QVariant catId = row.value("CategoryID");
     e.categoryId    = catId.isNull() ? -1 : catId.toInt();
@@ -589,267 +686,7 @@ QList<ActivityLogEntry> DatabaseManager::getActivityLogForItem(int itemId) {
     return list;
 }
 
-// ============================================================
-//  Schema versioning (Task 2.8)
-// ============================================================
-//
-//  Why a SchemaInfo table?
-//  -----------------------
-//  Databases live for years across many releases of an app. A schema
-//  change (new column, new table) must be applied in-place without
-//  destroying the user's existing data. We therefore stamp the DB
-//  with a small version number and gate each set of changes behind
-//  that number. Every release knows: "I expect version N — if I find
-//  N-1, run migration; if I find N, do nothing; if I find N+1, refuse
-//  because the user opened a future DB with an old binary."
-//
-//  Idempotence is the contract: calling migrate() twice must be safe.
-//  We achieve it with:
-//    • CREATE TABLE IF NOT EXISTS         (tables)
-//    • CREATE INDEX IF NOT EXISTS         (indexes)
-//    • columnExists() guard before ALTER  (columns)
-//    • INSERT OR IGNORE                   (seed rows, keyed on UNIQUE)
-//
-//  The whole 1 → 2 transition runs inside a single transaction so a
-//  crash midway leaves the DB at exactly the pre-migration version.
-// ============================================================
-
-// pragma_table_info returns one row per column of `table`. We scan for
-// the requested column name. Used to keep ALTER TABLE idempotent.
-bool DatabaseManager::columnExists(const QString& table, const QString& column)
-{
-    // pragma_table_info() is a SQLite table-valued function. We cannot
-    // bind the table name as a placeholder (it's a SQL identifier, not
-    // a value), so we splice it directly — safe because callers pass
-    // hard-coded table names, never user input.
-    auto rows = executeSelectQuery(
-        QString("SELECT name FROM pragma_table_info('%1')").arg(table)
-    );
-    for (const auto& row : rows) {
-        if (row["name"].toString().compare(column, Qt::CaseInsensitive) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
-int DatabaseManager::currentSchemaVersion()
-{
-    // If SchemaInfo doesn't exist yet (fresh install, or pre-versioning
-    // v1 database), treat that as version 0 — migrate() will create
-    // the table and stamp the right number.
-    auto exists = executeSelectQuery(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='SchemaInfo'"
-    );
-    if (exists.isEmpty()) return 0;
-
-    auto rows = executeSelectQuery(
-        "SELECT Value FROM SchemaInfo WHERE Key = 'schema_version'"
-    );
-    if (rows.isEmpty()) return 0;
-    return rows.first()["Value"].toInt();
-}
-
-bool DatabaseManager::migrate(int from, int to)
-{
-    if (from == to) return true;
-    if (from > to) {
-        qWarning() << "[DB] Refusing to downgrade schema from"
-                   << from << "to" << to;
-        return false;
-    }
-
-    // Single transaction — all-or-nothing.
-    if (!beginTransaction()) {
-        qWarning() << "[DB] Could not begin migration transaction.";
-        return false;
-    }
-
-    // Always make sure SchemaInfo exists first; its mere presence is
-    // how currentSchemaVersion() distinguishes "fresh DB" from "v1 DB
-    // built before we had versioning".
-    bool ok = executeQuery(R"(
-        CREATE TABLE IF NOT EXISTS SchemaInfo (
-            Key   TEXT PRIMARY KEY,
-            Value TEXT NOT NULL
-        )
-    )");
-    if (!ok) { rollbackTransaction(); return false; }
-
-    // ── 0 / 1 → 2  (single hop) ──────────────────────────────
-    // We treat 0 (no version row) and 1 (legacy v1 DB) identically:
-    // both need every v2 step applied. Each step is itself idempotent
-    // so re-running here is harmless.
-    if (from < 2 && to >= 2) {
-        if (!createV2Tables())  { rollbackTransaction(); return false; }
-        if (!addV2Columns())    { rollbackTransaction(); return false; }
-        if (!seedV2Defaults())  { rollbackTransaction(); return false; }
-    }
-
-    // Stamp the new version (INSERT OR REPLACE = upsert on PK).
-    ok = executeQuery(
-        "INSERT OR REPLACE INTO SchemaInfo (Key, Value) VALUES ('schema_version', :v)",
-        {{":v", QString::number(to)}}
-    );
-    if (!ok) { rollbackTransaction(); return false; }
-
-    if (!commitTransaction()) {
-        qWarning() << "[DB] Migration commit failed.";
-        return false;
-    }
-
-    qDebug() << "[DB] Migration" << from << "→" << to << "complete.";
-    emit dataChanged();
-    return true;
-}
-
-// ============================================================
-//  createV2Tables() — Task 2.9
-//
-//  Six new tables and three indexes. All idempotent.
-// ============================================================
-bool DatabaseManager::createV2Tables()
-{
-    qDebug() << "[DB] Creating v2 tables...";
-
-    // ── Categories ───────────────────────────────────────────
-    // A short colour-tagged label attached to a CoursesProjects row.
-    // Name is UNIQUE so the user can't make two "Algorithms" pills.
-    if (!executeQuery(R"(
-        CREATE TABLE IF NOT EXISTS Categories (
-            ID        INTEGER PRIMARY KEY AUTOINCREMENT,
-            Name      TEXT    NOT NULL UNIQUE,
-            Color     TEXT    NOT NULL,
-            CreatedAt TEXT    DEFAULT CURRENT_TIMESTAMP
-        )
-    )")) return false;
-
-    // ── ProjectMeta ──────────────────────────────────────────
-    // 1-to-1 sidecar for the Project flavour of CoursesProjects.
-    // ProjectID is BOTH the PK and the FK — natural one-row-per-project.
-    // ON DELETE CASCADE: when the project disappears, its meta does too.
-    if (!executeQuery(R"(
-        CREATE TABLE IF NOT EXISTS ProjectMeta (
-            ProjectID   INTEGER PRIMARY KEY,
-            Description TEXT,
-            Priority    TEXT    CHECK(Priority IN ('high','medium','low')),
-            Deadline    TEXT,
-            TeamJson    TEXT,
-            LinksJson   TEXT,
-            FOREIGN KEY (ProjectID) REFERENCES CoursesProjects(ID) ON DELETE CASCADE
-        )
-    )")) return false;
-
-    // ── Todos ────────────────────────────────────────────────
-    // Standalone todo list, not tied to a course/project.
-    if (!executeQuery(R"(
-        CREATE TABLE IF NOT EXISTS Todos (
-            ID          INTEGER PRIMARY KEY AUTOINCREMENT,
-            Title       TEXT    NOT NULL,
-            Completed   INTEGER NOT NULL DEFAULT 0,
-            Priority    TEXT    CHECK(Priority IN ('high','medium','low')),
-            CreatedAt   TEXT    DEFAULT CURRENT_TIMESTAMP,
-            CompletedAt TEXT
-        )
-    )")) return false;
-
-    // ── PomodoroSessions ─────────────────────────────────────
-    // Each completed pomodoro becomes one row. CourseID is nullable
-    // (a session can be "free" / uncategorised) and SET NULL on
-    // course-delete so we keep the history but lose the link.
-    if (!executeQuery(R"(
-        CREATE TABLE IF NOT EXISTS PomodoroSessions (
-            ID              INTEGER PRIMARY KEY AUTOINCREMENT,
-            CourseID        INTEGER,
-            DurationMinutes INTEGER NOT NULL,
-            CompletedAt     TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            Mode            TEXT    NOT NULL CHECK(Mode IN ('work','break')),
-            FOREIGN KEY (CourseID) REFERENCES CoursesProjects(ID) ON DELETE SET NULL
-        )
-    )")) return false;
-
-    // ── CalendarDayDetails ───────────────────────────────────
-    // Per-day notes/todos/completed bundles, keyed by date string.
-    // Date is TEXT in ISO 8601 (YYYY-MM-DD) so lexical order == chronological.
-    if (!executeQuery(R"(
-        CREATE TABLE IF NOT EXISTS CalendarDayDetails (
-            Date          TEXT PRIMARY KEY,
-            TodoJson      TEXT,
-            CompletedJson TEXT,
-            Notes         TEXT
-        )
-    )")) return false;
-
-    // ── Settings ─────────────────────────────────────────────
-    // Generic key/value store. Typed accessors (Task 4.8) wrap it
-    // so the UI never sees raw strings.
-    if (!executeQuery(R"(
-        CREATE TABLE IF NOT EXISTS Settings (
-            Key   TEXT PRIMARY KEY,
-            Value TEXT NOT NULL
-        )
-    )")) return false;
-
-    // ── Indexes ──────────────────────────────────────────────
-    // These speed up the three most frequent scans:
-    //   • heatmap aggregation reads ActivityLog by date
-    //   • pomodoro "today" totals scan PomodoroSessions by date
-    //   • todo views partition by Completed flag
-    if (!executeQuery("CREATE INDEX IF NOT EXISTS idx_activitylog_date "
-                      "ON ActivityLog(DATE(Timestamp))")) return false;
-    if (!executeQuery("CREATE INDEX IF NOT EXISTS idx_pomodoro_date "
-                      "ON PomodoroSessions(DATE(CompletedAt))")) return false;
-    if (!executeQuery("CREATE INDEX IF NOT EXISTS idx_todos_completed "
-                      "ON Todos(Completed)")) return false;
-
-    qDebug() << "[DB] v2 tables ready.";
-    return true;
-}
-
-// ============================================================
-//  addV2Columns() — Task 2.10
-//
-//  Adds two new columns to the existing CoursesProjects table:
-//    • CategoryID — FK to Categories, SET NULL on category delete
-//    • Status     — 'active' | 'paused' | 'completed'
-//
-//  SQLite cannot rename or drop columns easily, but `ALTER TABLE
-//  ... ADD COLUMN` is fine and supports inline REFERENCES for new
-//  columns (≥ 3.6.19). We guard each ADD with columnExists() so
-//  re-running the migration is a no-op.
-// ============================================================
-bool DatabaseManager::addV2Columns()
-{
-    if (!columnExists("CoursesProjects", "CategoryID")) {
-        if (!executeQuery(
-            "ALTER TABLE CoursesProjects ADD COLUMN CategoryID INTEGER NULL "
-            "REFERENCES Categories(ID) ON DELETE SET NULL"
-        )) return false;
-        qDebug() << "[DB] Added CoursesProjects.CategoryID";
-    }
-
-    if (!columnExists("CoursesProjects", "Status")) {
-        // Note: SQLite's ALTER TABLE ADD COLUMN forbids a non-constant
-        // default *with* a CHECK that references the column being added
-        // in some old versions, but the literal default 'active' is fine.
-        if (!executeQuery(
-            "ALTER TABLE CoursesProjects ADD COLUMN Status TEXT NOT NULL "
-            "DEFAULT 'active' "
-            "CHECK(Status IN ('active','paused','completed'))"
-        )) return false;
-        qDebug() << "[DB] Added CoursesProjects.Status";
-    }
-
-    return true;
-}
-
-// ============================================================
-//  seedV2Defaults() — Task 2.11
-//
-//  Five default categories (Name UNIQUE — INSERT OR IGNORE makes
-//  re-runs harmless) and five default Settings rows.
-// ============================================================
-bool DatabaseManager::seedV2Defaults()
+bool DatabaseManager::seedDefaults()
 {
     struct Cat { const char* name; const char* color; };
     static const Cat kCategories[] = {
@@ -884,3 +721,681 @@ bool DatabaseManager::seedV2Defaults()
     qDebug() << "[DB] v2 defaults seeded.";
     return true;
 }
+
+// ============================================================
+//  Phase 4 — Extended v2 API
+//
+//  Every method below sits on top of the v2 schema built in
+//  Phase 2 and the v2 structs added in Phase 3. They are the
+//  only entry point future widgets/views use to talk to the DB.
+//  Reads never emit; writes emit dataChanged() on success so
+//  subscribed views can refresh themselves.
+// ============================================================
+
+// ── Small JSON helpers, file-local ─────────────────────────────
+//
+// We store list-valued columns (team, links, todos, completed) as
+// JSON text. Two reasons for that, instead of a side table:
+//   1. They are *always read together* with their owning row, and
+//      never queried (you never "find me all projects where a team
+//      member is Alice"). Flattening avoids an unnecessary join.
+//   2. The lists are bounded and tiny (members of a team, links on
+//      a project, todos on a day). JSON is cheap at this size.
+//
+// We round-trip explicitly so an empty string in the DB becomes an
+// empty QStringList, and a missing/malformed array never crashes —
+// it just returns empty.
+static QString stringListToJson(const QStringList& list) {
+    QJsonArray arr;
+    for (const QString& s : list) arr.append(s);
+    return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
+}
+
+static QStringList jsonToStringList(const QString& text) {
+    QStringList out;
+    if (text.isEmpty()) return out;
+    QJsonParseError err{};
+    auto doc = QJsonDocument::fromJson(text.toUtf8(), &err);
+    if (err.error != QJsonParseError::NoError || !doc.isArray()) return out;
+    const auto arr = doc.array();
+    for (const auto& v : arr) if (v.isString()) out << v.toString();
+    return out;
+}
+
+static QString linksToJson(const QList<ProjectMetaData::Link>& links) {
+    QJsonArray arr;
+    for (const auto& l : links) {
+        QJsonObject o;
+        o["label"] = l.label;
+        o["url"]   = l.url;
+        arr.append(o);
+    }
+    return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
+}
+
+static QList<ProjectMetaData::Link> jsonToLinks(const QString& text) {
+    QList<ProjectMetaData::Link> out;
+    if (text.isEmpty()) return out;
+    QJsonParseError err{};
+    auto doc = QJsonDocument::fromJson(text.toUtf8(), &err);
+    if (err.error != QJsonParseError::NoError || !doc.isArray()) return out;
+    const auto arr = doc.array();
+    for (const auto& v : arr) {
+        if (!v.isObject()) continue;
+        const auto o = v.toObject();
+        ProjectMetaData::Link link;
+        link.label = o.value("label").toString();
+        link.url   = o.value("url").toString();
+        out.append(link);
+    }
+    return out;
+}
+
+// ============================================================
+//  Task 4.2 — Categories
+// ============================================================
+int DatabaseManager::addCategory(const QString& name, const QColor& color)
+{
+    if (!executeQuery(
+            "INSERT INTO Categories (Name, Color) VALUES (:n, :c)",
+            {{":n", name}, {":c", color.name()}})) {
+        return -1;
+    }
+    auto rows = executeSelectQuery("SELECT last_insert_rowid() AS id");
+    if (rows.isEmpty()) return -1;
+    int newId = rows.first()["id"].toInt();
+    qDebug() << "[DB] Added Category" << name << "with ID" << newId;
+    emit dataChanged();
+    return newId;
+}
+
+bool DatabaseManager::renameCategory(int id, const QString& newName)
+{
+    bool ok = executeQuery(
+        "UPDATE Categories SET Name = :n WHERE ID = :id",
+        {{":n", newName}, {":id", id}}
+    );
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+bool DatabaseManager::setCategoryColor(int id, const QColor& color)
+{
+    bool ok = executeQuery(
+        "UPDATE Categories SET Color = :c WHERE ID = :id",
+        {{":c", color.name()}, {":id", id}}
+    );
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+bool DatabaseManager::removeCategory(int id)
+{
+    // FK is ON DELETE SET NULL on CoursesProjects.CategoryID, so any
+    // dependent entities lose their category but survive. SQLite does
+    // that automatically when foreign_keys = ON (set in initialize()).
+    bool ok = executeQuery("DELETE FROM Categories WHERE ID = :id", {{":id", id}});
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+QList<CategoryData> DatabaseManager::fetchAllCategories()
+{
+    // entityCount comes from a LEFT JOIN so a freshly-created category
+    // with zero entities still appears in the list (count = 0).
+    QList<CategoryData> list;
+    auto rows = executeSelectQuery(R"(
+        SELECT c.ID    AS ID,
+               c.Name  AS Name,
+               c.Color AS Color,
+               COUNT(cp.ID) AS EntityCount
+        FROM   Categories c
+        LEFT   JOIN CoursesProjects cp ON cp.CategoryID = c.ID
+        GROUP  BY c.ID
+        ORDER  BY c.Name ASC
+    )");
+    for (const auto& row : rows) {
+        CategoryData c;
+        c.id          = row["ID"].toInt();
+        c.name        = row["Name"].toString();
+        c.color       = QColor(row["Color"].toString());
+        c.entityCount = row["EntityCount"].toInt();
+        list.append(c);
+    }
+    return list;
+}
+
+bool DatabaseManager::assignCategory(int entityId, int categoryId)
+{
+    // categoryId == -1 means "clear the category". SQL needs NULL,
+    // not 0. We pass a typed null QVariant for that path.
+    QVariant catParam = (categoryId < 0)
+        ? QVariant(QMetaType(QMetaType::Int))   // NULL of type INT
+        : QVariant(categoryId);
+
+    bool ok = executeQuery(
+        "UPDATE CoursesProjects SET CategoryID = :cat WHERE ID = :id",
+        {{":cat", catParam}, {":id", entityId}}
+    );
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+// ============================================================
+//  Task 4.3 — Course status
+//
+//  The CoursesProjects.Status column was added in Phase 2.10 with
+//  a CHECK constraint. We do a soft pre-check here so callers get
+//  a clear error rather than a constraint violation buried in a
+//  generic SQL message.
+// ============================================================
+bool DatabaseManager::setCourseStatus(int courseId, const QString& status)
+{
+    static const QSet<QString> kValid = {"active", "paused", "completed"};
+    if (!kValid.contains(status)) {
+        qWarning() << "[DB] setCourseStatus: invalid value" << status;
+        emit databaseError("Invalid course status: " + status);
+        return false;
+    }
+    bool ok = executeQuery(
+        "UPDATE CoursesProjects SET Status = :s WHERE ID = :id",
+        {{":s", status}, {":id", courseId}}
+    );
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+QString DatabaseManager::getCourseStatus(int courseId)
+{
+    auto rows = executeSelectQuery(
+        "SELECT Status FROM CoursesProjects WHERE ID = :id",
+        {{":id", courseId}}
+    );
+    if (rows.isEmpty()) return QString();
+    return rows.first()["Status"].toString();
+}
+
+// ============================================================
+//  Task 4.4 — ProjectMeta
+//
+//  The table uses ProjectID as both PK and FK to CoursesProjects.
+//  That makes "upsert" the natural verb: there is at most one meta
+//  row per project. INSERT OR REPLACE keys on the PK.
+// ============================================================
+bool DatabaseManager::upsertProjectMeta(const ProjectMetaData& meta)
+{
+    bool ok = executeQuery(R"(
+        INSERT OR REPLACE INTO ProjectMeta
+            (ProjectID, Description, Priority, Deadline, TeamJson, LinksJson)
+        VALUES
+            (:pid, :desc, :prio, :deadline, :team, :links)
+    )", {
+        {":pid",      meta.projectId},
+        {":desc",     meta.description},
+        {":prio",     meta.priority},
+        {":deadline", meta.deadline.isValid() ? QVariant(meta.deadline.toString(Qt::ISODate))
+                                              : QVariant()},
+        {":team",     stringListToJson(meta.team)},
+        {":links",    linksToJson(meta.links)},
+    });
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+ProjectMetaData DatabaseManager::getProjectMeta(int projectId)
+{
+    // Defaults: if no row exists the caller gets a well-formed empty
+    // struct with projectId stamped, so the UI can edit then upsert
+    // without needing to special-case "missing".
+    ProjectMetaData m;
+    m.projectId = projectId;
+
+    auto rows = executeSelectQuery(
+        "SELECT * FROM ProjectMeta WHERE ProjectID = :pid",
+        {{":pid", projectId}}
+    );
+    if (rows.isEmpty()) return m;
+
+    const auto& row = rows.first();
+    m.description = row["Description"].toString();
+    m.priority    = row["Priority"].toString();
+    if (m.priority.isEmpty()) m.priority = "medium";
+
+    const QString deadlineStr = row["Deadline"].toString();
+    if (!deadlineStr.isEmpty()) m.deadline = QDate::fromString(deadlineStr, Qt::ISODate);
+
+    m.team  = jsonToStringList(row["TeamJson"].toString());
+    m.links = jsonToLinks    (row["LinksJson"].toString());
+    return m;
+}
+
+// Convenience setters — each one read-modify-writes the row so an
+// individual field can be edited without rebuilding the whole struct.
+// They share the upsert path so behaviour is identical to a full
+// upsertProjectMeta() call from the caller's perspective.
+bool DatabaseManager::setProjectPriority(int projectId, const QString& priority)
+{
+    ProjectMetaData m = getProjectMeta(projectId);
+    m.priority = priority;
+    return upsertProjectMeta(m);
+}
+
+bool DatabaseManager::setProjectDeadline(int projectId, const QDate& deadline)
+{
+    ProjectMetaData m = getProjectMeta(projectId);
+    m.deadline = deadline;
+    return upsertProjectMeta(m);
+}
+
+bool DatabaseManager::setProjectTeam(int projectId, const QStringList& team)
+{
+    ProjectMetaData m = getProjectMeta(projectId);
+    m.team = team;
+    return upsertProjectMeta(m);
+}
+
+bool DatabaseManager::setProjectLinks(int projectId, const QList<ProjectMetaData::Link>& links)
+{
+    ProjectMetaData m = getProjectMeta(projectId);
+    m.links = links;
+    return upsertProjectMeta(m);
+}
+
+// ============================================================
+//  Task 4.5 — Todos
+// ============================================================
+int DatabaseManager::addTodo(const QString& title, const QString& priority)
+{
+    if (!executeQuery(R"(
+        INSERT INTO Todos (Title, Completed, Priority) VALUES (:t, 0, :p)
+    )", {{":t", title}, {":p", priority}})) {
+        return -1;
+    }
+    auto rows = executeSelectQuery("SELECT last_insert_rowid() AS id");
+    if (rows.isEmpty()) return -1;
+    int newId = rows.first()["id"].toInt();
+    emit dataChanged();
+    return newId;
+}
+
+bool DatabaseManager::toggleTodoCompleted(int id)
+{
+    // Two-step so we can flip the stored bit and stamp CompletedAt
+    // atomically. Wrapping in a transaction keeps a crash mid-toggle
+    // from leaving the row in a half-state (Completed=1 but no timestamp).
+    auto rows = executeSelectQuery(
+        "SELECT Completed FROM Todos WHERE ID = :id",
+        {{":id", id}}
+    );
+    if (rows.isEmpty()) return false;
+    const bool currentlyCompleted = rows.first()["Completed"].toInt() != 0;
+    const bool nextCompleted      = !currentlyCompleted;
+
+    beginTransaction();
+    bool ok = executeQuery(R"(
+        UPDATE Todos
+        SET    Completed   = :c,
+               CompletedAt = CASE WHEN :c = 1 THEN CURRENT_TIMESTAMP ELSE NULL END
+        WHERE  ID = :id
+    )", {{":c", nextCompleted ? 1 : 0}, {":id", id}});
+
+    if (!ok) { rollbackTransaction(); return false; }
+    commitTransaction();
+    emit dataChanged();
+    return true;
+}
+
+bool DatabaseManager::setTodoPriority(int id, const QString& priority)
+{
+    bool ok = executeQuery(
+        "UPDATE Todos SET Priority = :p WHERE ID = :id",
+        {{":p", priority}, {":id", id}}
+    );
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+bool DatabaseManager::removeTodo(int id)
+{
+    bool ok = executeQuery("DELETE FROM Todos WHERE ID = :id", {{":id", id}});
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+static TodoData rowToTodo(const QVariantMap& row) {
+    TodoData t;
+    t.id        = row["ID"].toInt();
+    t.title     = row["Title"].toString();
+    t.completed = row["Completed"].toInt() != 0;
+    t.priority  = row["Priority"].toString();
+    if (t.priority.isEmpty()) t.priority = "medium";
+    t.createdAt   = QDateTime::fromString(row["CreatedAt"].toString(),   Qt::ISODate);
+    t.completedAt = QDateTime::fromString(row["CompletedAt"].toString(), Qt::ISODate);
+    return t;
+}
+
+QList<TodoData> DatabaseManager::fetchActiveTodos()
+{
+    // Ordering by priority text relies on it being a closed set
+    // ('high','medium','low'). We compute an explicit rank in the
+    // SQL so 'high' beats 'medium' regardless of alphabetical order.
+    QList<TodoData> list;
+    auto rows = executeSelectQuery(R"(
+        SELECT *,
+               CASE Priority
+                   WHEN 'high'   THEN 0
+                   WHEN 'medium' THEN 1
+                   WHEN 'low'    THEN 2
+                   ELSE 3
+               END AS PriRank
+        FROM   Todos
+        WHERE  Completed = 0
+        ORDER  BY PriRank ASC, CreatedAt DESC
+    )");
+    for (const auto& row : rows) list.append(rowToTodo(row));
+    return list;
+}
+
+QList<TodoData> DatabaseManager::fetchCompletedTodos()
+{
+    QList<TodoData> list;
+    auto rows = executeSelectQuery(R"(
+        SELECT * FROM Todos
+        WHERE  Completed = 1
+        ORDER  BY CompletedAt DESC
+    )");
+    for (const auto& row : rows) list.append(rowToTodo(row));
+    return list;
+}
+
+int DatabaseManager::countCompletedTodosOn(const QDate& date)
+{
+    auto rows = executeSelectQuery(R"(
+        SELECT COUNT(*) AS N
+        FROM   Todos
+        WHERE  Completed = 1
+          AND  DATE(CompletedAt) = :d
+    )", {{":d", date.toString(Qt::ISODate)}});
+    return rows.isEmpty() ? 0 : rows.first()["N"].toInt();
+}
+
+// ============================================================
+//  Task 4.6 — Pomodoro sessions
+// ============================================================
+int DatabaseManager::insertPomodoroSession(int courseId, int durationMin, const QString& mode)
+{
+    // courseId == -1 → free session, store as NULL so the SET NULL
+    // FK rule has nothing to point at and the column reads as
+    // "unattached" everywhere downstream.
+    QVariant courseParam = (courseId < 0)
+        ? QVariant(QMetaType(QMetaType::Int))
+        : QVariant(courseId);
+
+    if (!executeQuery(R"(
+        INSERT INTO PomodoroSessions (CourseID, DurationMinutes, Mode)
+        VALUES (:cid, :dur, :mode)
+    )", {{":cid", courseParam}, {":dur", durationMin}, {":mode", mode}})) {
+        return -1;
+    }
+    auto rows = executeSelectQuery("SELECT last_insert_rowid() AS id");
+    if (rows.isEmpty()) return -1;
+    int newId = rows.first()["id"].toInt();
+    emit dataChanged();
+    return newId;
+}
+
+// One source of truth for the join used by both list fetchers — same
+// pattern as kEntitySelectSql above. CourseName comes from a LEFT
+// JOIN since CourseID may be NULL.
+static const char* kPomodoroSelectSql =
+    "SELECT p.ID              AS ID,             "
+    "       p.CourseID        AS CourseID,       "
+    "       cp.Name           AS CourseName,     "
+    "       p.DurationMinutes AS DurationMinutes,"
+    "       p.CompletedAt     AS CompletedAt,    "
+    "       p.Mode            AS Mode            "
+    "FROM   PomodoroSessions p                    "
+    "LEFT   JOIN CoursesProjects cp ON cp.ID = p.CourseID ";
+
+static PomodoroSessionData rowToPomodoro(const QVariantMap& row) {
+    PomodoroSessionData s;
+    s.id              = row["ID"].toInt();
+    const QVariant cid = row.value("CourseID");
+    s.courseId        = cid.isNull() ? -1 : cid.toInt();
+    s.courseName      = row.value("CourseName", QString()).toString();
+    s.durationMinutes = row["DurationMinutes"].toInt();
+    s.completedAt     = QDateTime::fromString(row["CompletedAt"].toString(), Qt::ISODate);
+    s.mode            = row["Mode"].toString();
+    return s;
+}
+
+QList<PomodoroSessionData> DatabaseManager::fetchRecentSessions(int limit)
+{
+    QList<PomodoroSessionData> list;
+    auto rows = executeSelectQuery(
+        QString(kPomodoroSelectSql) +
+        "ORDER BY p.CompletedAt DESC LIMIT :n",
+        {{":n", limit}}
+    );
+    for (const auto& row : rows) list.append(rowToPomodoro(row));
+    return list;
+}
+
+QList<PomodoroSessionData> DatabaseManager::fetchSessionsOn(const QDate& date)
+{
+    QList<PomodoroSessionData> list;
+    auto rows = executeSelectQuery(
+        QString(kPomodoroSelectSql) +
+        "WHERE DATE(p.CompletedAt) = :d "
+        "ORDER BY p.CompletedAt ASC",
+        {{":d", date.toString(Qt::ISODate)}}
+    );
+    for (const auto& row : rows) list.append(rowToPomodoro(row));
+    return list;
+}
+
+int DatabaseManager::totalMinutesOn(const QDate& date)
+{
+    // Only 'work' minutes count toward "time studied" — break minutes
+    // are tracked separately and not surfaced as study time.
+    auto rows = executeSelectQuery(R"(
+        SELECT COALESCE(SUM(DurationMinutes), 0) AS Total
+        FROM   PomodoroSessions
+        WHERE  DATE(CompletedAt) = :d
+          AND  Mode = 'work'
+    )", {{":d", date.toString(Qt::ISODate)}});
+    return rows.isEmpty() ? 0 : rows.first()["Total"].toInt();
+}
+
+// ============================================================
+//  Task 4.7 — Calendar day details
+// ============================================================
+CalendarDayData DatabaseManager::getDay(const QDate& date)
+{
+    CalendarDayData d;
+    d.date = date;
+
+    auto rows = executeSelectQuery(
+        "SELECT * FROM CalendarDayDetails WHERE Date = :d",
+        {{":d", date.toString(Qt::ISODate)}}
+    );
+    if (rows.isEmpty()) return d;          // empty struct, valid date
+
+    const auto& row = rows.first();
+    d.todo      = jsonToStringList(row["TodoJson"].toString());
+    d.completed = jsonToStringList(row["CompletedJson"].toString());
+    d.notes     = row["Notes"].toString();
+    return d;
+}
+
+bool DatabaseManager::upsertDay(const CalendarDayData& data)
+{
+    bool ok = executeQuery(R"(
+        INSERT OR REPLACE INTO CalendarDayDetails
+            (Date, TodoJson, CompletedJson, Notes)
+        VALUES
+            (:d, :todo, :done, :notes)
+    )", {
+        {":d",     data.date.toString(Qt::ISODate)},
+        {":todo",  stringListToJson(data.todo)},
+        {":done",  stringListToJson(data.completed)},
+        {":notes", data.notes},
+    });
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+QSet<QDate> DatabaseManager::datesWithContent(const QDate& from, const QDate& to)
+{
+    // "Has content" = at least one of the three fields is non-empty.
+    // We filter that in SQL so the caller doesn't have to fetch every
+    // row in the range just to discard empties.
+    QSet<QDate> set;
+    auto rows = executeSelectQuery(R"(
+        SELECT Date FROM CalendarDayDetails
+        WHERE  Date BETWEEN :from AND :to
+          AND ( COALESCE(TodoJson,      '') NOT IN ('', '[]')
+             OR COALESCE(CompletedJson, '') NOT IN ('', '[]')
+             OR COALESCE(Notes,         '') <> '' )
+    )", {
+        {":from", from.toString(Qt::ISODate)},
+        {":to",   to.toString(Qt::ISODate)},
+    });
+    for (const auto& row : rows) {
+        QDate d = QDate::fromString(row["Date"].toString(), Qt::ISODate);
+        if (d.isValid()) set.insert(d);
+    }
+    return set;
+}
+
+// ============================================================
+//  Task 4.8 — Settings k/v + typed wrappers
+// ============================================================
+QString DatabaseManager::getSetting(const QString& key, const QString& defaultValue)
+{
+    auto rows = executeSelectQuery(
+        "SELECT Value FROM Settings WHERE Key = :k",
+        {{":k", key}}
+    );
+    if (rows.isEmpty()) return defaultValue;
+    return rows.first()["Value"].toString();
+}
+
+bool DatabaseManager::setSetting(const QString& key, const QString& value)
+{
+    // INSERT OR REPLACE: keyed on the PK so it acts as an upsert.
+    // No dataChanged() spam from individual setting writes by default —
+    // SettingsView batches them and emits once at the end. We keep
+    // this honest by *not* emitting here. (If a future caller needs
+    // a refresh, it can call dataChanged() explicitly.)
+    return executeQuery(
+        "INSERT OR REPLACE INTO Settings (Key, Value) VALUES (:k, :v)",
+        {{":k", key}, {":v", value}}
+    );
+}
+
+int DatabaseManager::getSettingInt(const QString& key, int defaultValue)
+{
+    const QString raw = getSetting(key, QString::number(defaultValue));
+    bool ok = false;
+    int v = raw.toInt(&ok);
+    return ok ? v : defaultValue;
+}
+
+bool DatabaseManager::getSettingBool(const QString& key, bool defaultValue)
+{
+    const QString raw = getSetting(key, defaultValue ? "1" : "0");
+    return raw == "1" || raw.compare("true", Qt::CaseInsensitive) == 0;
+}
+
+// ProfileData and PreferencesData are typed views over Settings. The
+// key prefix groups them: profile.* and preferences.* (preferences
+// reuse the same keys as the seeded user-facing pomodoro/sound/etc.
+// rows so the wrapper does not duplicate state).
+ProfileData DatabaseManager::getProfile()
+{
+    ProfileData p;
+    p.name  = getSetting("profile.name");
+    p.email = getSetting("profile.email");
+    p.goals = getSetting("profile.goals");
+    return p;
+}
+
+bool DatabaseManager::setProfile(const ProfileData& profile)
+{
+    beginTransaction();
+    bool ok = setSetting("profile.name",  profile.name)
+           && setSetting("profile.email", profile.email)
+           && setSetting("profile.goals", profile.goals);
+    if (!ok) { rollbackTransaction(); return false; }
+    commitTransaction();
+    emit dataChanged();
+    return true;
+}
+
+PreferencesData DatabaseManager::getPreferences()
+{
+    PreferencesData p;
+    p.workMinutes   = getSettingInt ("pomodoro.workMinutes",  25);
+    p.breakMinutes  = getSettingInt ("pomodoro.breakMinutes", 5);
+    p.notifications = getSettingBool("notifications.enabled", true);
+    p.sound         = getSettingBool("sound.enabled",         true);
+    p.autoPauseDays = getSettingInt ("courses.autoPauseDays", 30);
+    return p;
+}
+
+bool DatabaseManager::setPreferences(const PreferencesData& prefs)
+{
+    beginTransaction();
+    bool ok = setSetting("pomodoro.workMinutes",  QString::number(prefs.workMinutes))
+           && setSetting("pomodoro.breakMinutes", QString::number(prefs.breakMinutes))
+           && setSetting("notifications.enabled", prefs.notifications ? "1" : "0")
+           && setSetting("sound.enabled",         prefs.sound         ? "1" : "0")
+           && setSetting("courses.autoPauseDays", QString::number(prefs.autoPauseDays));
+    if (!ok) { rollbackTransaction(); return false; }
+    commitTransaction();
+    emit dataChanged();
+    return true;
+}
+
+// ============================================================
+//  Task 4.9 — Persisted pomodoro timer state
+//
+//  We piggy-back on the Settings table under the reserved prefix
+//  `pomodoro.state.*`. The seeded keys in Phase 2.11 used
+//  `pomodoro.workMinutes` / `pomodoro.breakMinutes` (no `.state.`
+//  segment) so there is no risk of collision.
+// ============================================================
+PomodoroTimerState DatabaseManager::getPomodoroState()
+{
+    PomodoroTimerState s;
+    s.mode             = static_cast<PomodoroTimerState::Mode> (getSettingInt("pomodoro.state.mode",  0));
+    s.state            = static_cast<PomodoroTimerState::State>(getSettingInt("pomodoro.state.state", 0));
+    s.courseId         = getSettingInt("pomodoro.state.courseId",         -1);
+    s.totalSeconds     = getSettingInt("pomodoro.state.totalSeconds",     25 * 60);
+    s.remainingSeconds = getSettingInt("pomodoro.state.remainingSeconds", 25 * 60);
+    const QString startedRaw = getSetting("pomodoro.state.startedAt");
+    if (!startedRaw.isEmpty()) {
+        s.startedAt = QDateTime::fromString(startedRaw, Qt::ISODate);
+    }
+    return s;
+}
+
+bool DatabaseManager::savePomodoroState(const PomodoroTimerState& state)
+{
+    beginTransaction();
+    bool ok =
+        setSetting("pomodoro.state.mode",             QString::number(static_cast<int>(state.mode)))
+     && setSetting("pomodoro.state.state",            QString::number(static_cast<int>(state.state)))
+     && setSetting("pomodoro.state.courseId",         QString::number(state.courseId))
+     && setSetting("pomodoro.state.totalSeconds",     QString::number(state.totalSeconds))
+     && setSetting("pomodoro.state.remainingSeconds", QString::number(state.remainingSeconds))
+     && setSetting("pomodoro.state.startedAt",
+                   state.startedAt.isValid() ? state.startedAt.toString(Qt::ISODate) : QString());
+    if (!ok) { rollbackTransaction(); return false; }
+    commitTransaction();
+    // No dataChanged() — timer state changes shouldn't trigger UI-wide
+    // refreshes. The widget owns its own tick signal.
+    return true;
+}
+

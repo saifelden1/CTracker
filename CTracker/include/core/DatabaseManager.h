@@ -4,6 +4,7 @@
 #include <QSqlDatabase>
 #include <QVariantMap>
 #include <QList>
+#include <QSet>
 #include <QDate>
 #include <QDateTime>
 #include <QString>
@@ -69,21 +70,71 @@ public:
     QList<ActivityLogEntry> getActivityLog(const QDate& from, const QDate& to);
     QList<ActivityLogEntry> getActivityLogForItem(int itemId);
 
-    // ---- Schema versioning (Task 2.8) ----
+    // ============================================================
+    //  Phase 4 — Extended v2 API
     //
-    // The database carries its own version number in a tiny key/value
-    // table called `SchemaInfo`. Whenever we ship a structural change
-    // (new tables, new columns, new indexes) we bump the version and
-    // implement the diff in `migrate()`.
+    //  Everything below was added once the v2 schema landed (Phase 2).
+    //  Each block maps 1:1 to one Phase-4 task in tasks.md so the
+    //  surface is easy to audit against the spec.
     //
-    // currentSchemaVersion() returns 0 if `SchemaInfo` does not exist
-    // yet (fresh install) or the version is missing for any reason.
-    //
-    // migrate(from, to) is *idempotent*: re-running it must not fail
-    // and must not corrupt data. It wraps every step in a single
-    // transaction so a half-applied migration is impossible.
-    int  currentSchemaVersion();
-    bool migrate(int from, int to);
+    //  Convention: every mutating call emits dataChanged() on success
+    //  so any subscribed view refreshes itself. Reads never emit.
+    // ============================================================
+
+    // ---- Categories (Task 4.2) ----
+    int  addCategory(const QString& name, const QColor& color);
+    bool renameCategory(int id, const QString& newName);
+    bool setCategoryColor(int id, const QColor& color);
+    bool removeCategory(int id);                                   // NULLs dependent entities
+    QList<CategoryData> fetchAllCategories();                      // includes entityCount
+    bool assignCategory(int entityId, int categoryId);             // categoryId == -1 clears
+
+    // ---- Course status (Task 4.3) ----
+    bool    setCourseStatus(int courseId, const QString& status);
+    QString getCourseStatus(int courseId);
+
+    // ---- ProjectMeta (Task 4.4) ----
+    bool             upsertProjectMeta(const ProjectMetaData& meta);
+    ProjectMetaData  getProjectMeta(int projectId);                // defaults if no row
+    bool setProjectPriority(int projectId, const QString& priority);
+    bool setProjectDeadline(int projectId, const QDate& deadline);
+    bool setProjectTeam    (int projectId, const QStringList& team);
+    bool setProjectLinks   (int projectId, const QList<ProjectMetaData::Link>& links);
+
+    // ---- Todos (Task 4.5) ----
+    int  addTodo(const QString& title, const QString& priority = "medium");
+    bool toggleTodoCompleted(int id);
+    bool setTodoPriority(int id, const QString& priority);
+    bool removeTodo(int id);
+    QList<TodoData> fetchActiveTodos();
+    QList<TodoData> fetchCompletedTodos();
+    int  countCompletedTodosOn(const QDate& date);
+
+    // ---- Pomodoro sessions (Task 4.6) ----
+    int  insertPomodoroSession(int courseId, int durationMin, const QString& mode);
+    QList<PomodoroSessionData> fetchRecentSessions(int limit);
+    QList<PomodoroSessionData> fetchSessionsOn(const QDate& date);
+    int  totalMinutesOn(const QDate& date);                        // sum of work minutes
+
+    // ---- Calendar day details (Task 4.7) ----
+    CalendarDayData getDay(const QDate& date);                     // empty struct if missing
+    bool            upsertDay(const CalendarDayData& data);
+    QSet<QDate>     datesWithContent(const QDate& from, const QDate& to);
+
+    // ---- Settings k/v + typed wrappers (Task 4.8) ----
+    QString getSetting(const QString& key, const QString& defaultValue = {});
+    bool    setSetting(const QString& key, const QString& value);
+    int     getSettingInt (const QString& key, int  defaultValue = 0);
+    bool    getSettingBool(const QString& key, bool defaultValue = false);
+
+    ProfileData     getProfile();
+    bool            setProfile(const ProfileData& profile);
+    PreferencesData getPreferences();
+    bool            setPreferences(const PreferencesData& prefs);
+
+    // ---- Persisted pomodoro timer state (Task 4.9) ----
+    PomodoroTimerState getPomodoroState();
+    bool               savePomodoroState(const PomodoroTimerState& state);
 
 signals:
     // Emitted whenever data changes so the UI can refresh itself
@@ -101,13 +152,8 @@ private:
     DatabaseManager& operator=(const DatabaseManager&) = delete;
 
     // ---- Internal helpers ----
-    bool createTables();          // v1 schema (idempotent)
-    bool createV2Tables();        // Task 2.9 — new tables + indexes (idempotent)
-    bool addV2Columns();          // Task 2.10 — column additions on CoursesProjects
-    bool seedV2Defaults();        // Task 2.11 — default categories + settings
-
-    // pragma_table_info-based check used to keep `ALTER TABLE` idempotent.
-    bool columnExists(const QString& table, const QString& column);
+    bool createTables();          // Creates all 10 unified schema tables
+    bool seedDefaults();          // Default categories + settings
 
     // Execute a write query (INSERT / UPDATE / DELETE)
     // params = named placeholders, e.g. {":name", "ROS 2"}

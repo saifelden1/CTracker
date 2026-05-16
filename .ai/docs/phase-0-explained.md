@@ -1,5 +1,12 @@
 # Phase 0 — Source-Tree Reorganization, Explained
 
+> ### 🟢 Plain-English note before you start
+>
+> Phase 0 is about **moving files around**. No code logic changes — just
+> moving `.h` and `.cpp` files into tidier folders so the project is
+> easier to navigate as it grows. If you've ever reorganised photos into
+> folders by year, it's the same idea, just for source code.
+
 > **Audience.** This document is written so a student who has never seen
 > the project can follow along and *replicate* the work — not just read
 > what we did, but understand **why** every decision was made and **how**

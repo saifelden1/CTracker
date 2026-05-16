@@ -95,11 +95,24 @@ void CircularProgressBar::drawProgress(QPainter& painter, const QRectF& rect) {
     painter.drawArc(rect, startAngle, spanAngle);
 }
 
+void CircularProgressBar::setCustomText(const QString& text) {
+    if (text == m_customText) {
+        return;
+    }
+    m_customText = text;
+    update();
+}
+
 void CircularProgressBar::drawText(QPainter& painter, const QRectF& rect) {
     QFont f = painter.font();
     f.setBold(true);
     f.setPointSizeF(std::max(8.0, rect.width() / 5.0));
     painter.setFont(f);
     painter.setPen(QColor("#e4e6eb"));
-    painter.drawText(rect, Qt::AlignCenter, QString("%1%").arg(m_progress));
+
+    // When customText is set (e.g. "25:00" for Pomodoro), draw it instead of percentage.
+    const QString displayText = m_customText.isEmpty()
+        ? QString("%1%").arg(m_progress)
+        : m_customText;
+    painter.drawText(rect, Qt::AlignCenter, displayText);
 }
