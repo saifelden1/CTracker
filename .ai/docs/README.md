@@ -92,11 +92,11 @@ no Recharts ever ship into the Qt binary. (See CLAUDE.md §5a.)
 | 1 — CMake / Qt skeleton | ✅ Built | `MainWindow`, dark QSS, sidebar, dashboard. |
 | 2 — Database | ✅ Built | 10 core tables defined and seeded directly. |
 | 3 — Data vocabulary | ✅ Built | `EntityData` extended; structural definitions available. |
-| 4 — Courses module | 🟡 Partial | `EntityCard`, `UnitExpandableWidget`, detail view scaffolded; v2 fields not yet surfaced. |
-| 5 — Projects module | 🟡 Partial | Alias header only; project meta UI pending. |
-| 6 — Todos / Pomodoro | ⬜ Scheduled | Folders exist with `.gitkeep`; widgets not started. |
-| 7 — Calendar | ⬜ Scheduled | Same. |
-| 8 — Analytics polish | 🟡 Partial | `ContributionHeatmap` + `ActivityLogModel` exist; charts pending Qt6::Charts. |
+| 4 — DB CRUD layer | ✅ Built | Full v1 + v2 read/write surface: Categories, ProjectMeta, Todos, Pomodoro, Calendar, Settings, persisted timer state. |
+| 5 — Models | ✅ Built | `ActivityLogModel`, `CategoryModel`, `TodoModel`, `HeatmapAggregator`, `AnalyticsSummary` (stub). |
+| 6 — Widgets | ✅ Built | `StatsCard`, `CategoryPill`, `CalendarWidget`, `DayDetailsPanel`, `TodoRow`, `PomodoroTimerWidget`, `ProjectCard`, `CoursesFilterBar`, `EmptyState`, `EntityCard` v2 (CategoryPill + Paused badge). |
+| 7 — Views | 🟡 Partial | `CoursesView` (Task 7.3) built. Remaining: SideNavigationBar v2, HomeDashboard v2, ProjectsView, CourseDetailView v2, ProjectDetailView v2, PomodoroView, AnalyticsView v2, EntityCreateDialog, SettingsView v2, MainWindow v2. |
+| 8 — Theme / polish | 🟡 Partial | `ContributionHeatmap` + `ActivityLogModel` exist; charts pending Qt6::Charts; QSS theme pending. |
 | 9 — Tests + packaging | ⬜ Scheduled | `tests/CMakeLists.txt` skeleton present; no `test_*.cpp` yet. |
 
 Authoritative tick-list: [`.ai/specs/tasks.md`](../.ai/specs/tasks.md).

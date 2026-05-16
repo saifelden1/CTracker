@@ -50,9 +50,13 @@ set(SOURCES
     src/courses/CoursesFilterBar.cpp
     src/courses/CoursesView.cpp
     src/courses/EntityDetailView.cpp
+    src/courses/CourseDetailView.cpp
 
     # projects/
     src/projects/ProjectCard.cpp
+    src/projects/ProjectsFilterBar.cpp
+    src/projects/ProjectsView.cpp
+    src/projects/ProjectDetailView.cpp
 
     # pomodoro/
     src/pomodoro/PomodoroTimerWidget.cpp
@@ -108,6 +112,8 @@ set(HEADERS
 
     # projects/
     include/projects/ProjectCard.h
+    include/projects/ProjectsFilterBar.h
+    include/projects/ProjectsView.h
     include/projects/ProjectDetailView.h # alias header
 
     # analytics/

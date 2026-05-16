@@ -301,49 +301,49 @@ otifications.enabled=1\, \sound.enabled=1\, \courses.autoPauseDays=30\
 ## Phase 7: Views & Navigation
 
 ### Task 7.1: SideNavigationBar (`shared/`)
-- [ ] 256 px fixed width, header (CTracker logo + name), 7 nav buttons (Home, Courses, Projects, To-Do, Pomodoro, Analytics, Settings), footer (user profile chip)
-- [ ] `setActiveButton(int)`, `navigationRequested(int)` signal
-- [ ] Active button uses left accent border in primary green
+- [x] 256 px fixed width, header (CTracker logo + name), 7 nav buttons (Home, Courses, Projects, To-Do, Pomodoro, Analytics, Settings), footer (user profile chip)
+- [x] `setActiveButton(int)`, `navigationRequested(int)` signal
+- [x] Active button uses left accent border in primary green
 
 ### Task 7.2: HomeDashboard (`shared/`) — final unified form
-- [ ] Top row: 3 × `StatsCard` (Active Courses w/ paused badge, Projects w/ due-soon sub-count, Completion Rate)
-- [ ] Lower section: `CalendarWidget` (left) + stacked `DayDetailsPanel` & `ContributionHeatmap` (right)
-- [ ] Heatmap configured in `RecentBuckets` mode for last 12 weeks (84 days)
-- [ ] Calendar `dateClicked` → `DatabaseManager::getDay` → `DayDetailsPanel::showDay`
-- [ ] Subscribes to `dataChanged` for live refresh of every section
+- [x] Top row: 3 × `StatsCard` (Active Courses w/ paused badge, Projects w/ due-soon sub-count, Completion Rate)
+- [x] Lower section: `CalendarWidget` (left) + stacked `DayDetailsPanel` & `ContributionHeatmap` (right)
+- [x] Heatmap configured in `RecentBuckets` mode for last 12 weeks (84 days)
+- [x] Calendar `dateClicked` → `DatabaseManager::getDay` → `DayDetailsPanel::showDay`
+- [x] Subscribes to `dataChanged` for live refresh of every section
 
 ### Task 7.3: CoursesView (`courses/`)
-- [ ] Embeds `CoursesFilterBar` at top
-- [ ] Responsive `QGridLayout` of `EntityCard` widgets (1-4 cols based on width)
-- [ ] Applies `CourseFilter` (search/category/status) in real time
-- [ ] EmptyState widget when no results
-- [ ] "Add New" → `EntityCreateDialog` (Task 7.10) → on accept, navigate to detail view
+- [x] Embeds `CoursesFilterBar` at top
+- [x] Responsive `QGridLayout` of `EntityCard` widgets (1-4 cols based on width)
+- [x] Applies `CourseFilter` (search/category/status) in real time
+- [x] EmptyState widget when no results
+- [x] "Add New" → `EntityCreateDialog` (Task 7.10) → on accept, navigate to detail view
 
 ### Task 7.4: ProjectsView (`projects/`)
-- [ ] Same filter pattern but with `ProjectFilter` and `ProjectCard` grid
-- [ ] Fetch via `fetchAllProjects()` + `getProjectMeta` per project (consider batching to one JOIN later)
-- [ ] "Add New" → `EntityCreateDialog` in project-only mode
+- [x] Same filter pattern but with `ProjectFilter` and `ProjectCard` grid
+- [x] Fetch via `fetchAllProjects()` + `getProjectMeta` per project (consider batching to one JOIN later)
+- [x] "Add New" → `EntityCreateDialog` in project-only mode
 
 ### Task 7.5: CourseDetailView (`courses/`) — supersedes the old skeletal `EntityDetailView`
-- [ ] Title bar: entity name + Pause/Resume toggle (binds to `setCourseStatus`) + Add/Delete unit buttons + overall progress `CircularProgressBar`
-- [ ] `QScrollArea` of `UnitExpandableWidget` items
-- [ ] `loadCourse(int courseId)` fetches units/sessions, populates
-- [ ] Add Unit → `QInputDialog` → `addUnit`
-- [ ] Add Session-Task within a unit → `addSessionTask`
-- [ ] Wire `UnitExpandableWidget::sessionTaskProgressChanged` → `updateSessionTaskProgress`
-- [ ] Back button → emits `backRequested()`
+- [x] Title bar: entity name + Pause/Resume toggle (binds to `setCourseStatus`) + Add/Delete unit buttons + overall progress `CircularProgressBar`
+- [x] `QScrollArea` of `UnitExpandableWidget` items
+- [x] `loadCourse(int courseId)` fetches units/sessions, populates
+- [x] Add Unit → `QInputDialog` → `addUnit`
+- [x] Add Session-Task within a unit → `addSessionTask`
+- [x] Wire `UnitExpandableWidget::sessionTaskProgressChanged` → `updateSessionTaskProgress`
+- [x] Back button → emits `backRequested()`
 
 ### Task 7.6: ProjectDetailView (`projects/`)
-- [ ] Mirrors `CourseDetailView` shell
-- [ ] Left column: task checklist; right column: project info (deadline, team, links opening in default browser via `QDesktopServices::openUrl`)
-- [ ] Status / priority / deadline badges in header
-- [ ] Shares a base class with `CourseDetailView` for the common scaffolding (optional refactor)
+- [x] Mirrors `CourseDetailView` shell
+- [x] Left column: task checklist; right column: project info (deadline, team, links opening in default browser via `QDesktopServices::openUrl`)
+- [x] Status / priority / deadline badges in header
+- [x] Shares a base class with `CourseDetailView` for the common scaffolding (optional refactor)
 
 ### Task 7.7: TodoView (`todos/`)
-- [ ] Header: title + 2 stat boxes (active count, completed count)
-- [ ] Add-task input with Enter-to-submit and `+` button
-- [ ] Two sections (Active / Completed) of `TodoRow`s
-- [ ] Within each section: priority high → medium → low
+- [x] Header: title + 2 stat boxes (active count, completed count)
+- [x] Add-task input with Enter-to-submit and `+` button
+- [x] Two sections (Active / Completed) of `TodoRow`s
+- [x] Within each section: priority high → medium → low
 
 ### Task 7.8: PomodoroView (`pomodoro/`)
 - [ ] Two-column layout

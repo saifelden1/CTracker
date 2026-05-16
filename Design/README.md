@@ -1,11 +1,15 @@
+# Design Folder - Visual Reference Only
 
-  # Design Course Tracker UI
+This React+TypeScript+Tailwind prototype is for **VISUAL REFERENCE ONLY**.
 
-  This is a code bundle for Design Course Tracker UI. The original project is available at https://www.figma.com/design/7YcOBzSQUjbJuRWnCNDwjs/Design-Course-Tracker-UI.
+**Purpose**: Provides visual/interaction reference for Qt implementation.
 
-  ## Running the code
+**Key Files**:
+- `VISUAL_REFERENCE.md` - React→Qt component mapping, design tokens
+- `DESIGN_SYSTEM_COMPACT.md` - Color palette, spacing, component patterns
 
-  Run `npm i` to install the dependencies.
+**Running** (optional): `npm install && npm run dev`
 
-  Run `npm run dev` to start the development server.
+**Important**: NO React/TypeScript/Tailwind code is ported to Qt. The Qt app uses native widgets + QSS.
+
   

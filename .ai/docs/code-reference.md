@@ -1,7 +1,7 @@
 # CTracker — Code Reference
 
 > **Purpose.** Function-by-function catalogue of every class that
-> exists in the codebase **today** (after Phases 0–3). Each entry
+> exists in the codebase **today** (after Phases 0–6 + Task 7.3). Each entry
 > answers three questions: *what does this do, when is it called, what
 > does it return.* Use it as a lookup; you don't have to read it
 > linearly.
@@ -33,14 +33,29 @@
 | `shared/` | [SideNavigationBar.h](#sidenavigationbar) | `SideNavigationBar` |
 | `shared/` | [HomeDashboard.h](#homedashboard)    | `HomeDashboard`   |
 | `shared/` | [CircularProgressBar.h](#circularprogressbar) | `CircularProgressBar` |
+| `shared/` | [StatsCard.h](#statscard)            | `StatsCard`       |
+| `shared/` | [CategoryPill.h](#categorypill)      | `CategoryPill`    |
+| `shared/` | [EmptyState.h](#emptystate)          | `EmptyState`      |
+| `shared/` | [CategoryModel.h](#categorymodel)    | `CategoryModel`   |
 | `courses/` | [EntityCard.h](#entitycard)          | `EntityCard`      |
 | `courses/` | [UnitExpandableWidget.h](#unitexpandablewidget) | `UnitExpandableWidget` |
 | `courses/` | [SessionTaskRow.h](#sessiontaskrow)  | `SessionTaskRow`  |
 | `courses/` | [EntityDetailView.h](#entitydetailview) | `EntityDetailView` |
+| `courses/` | [CoursesFilterBar.h](#coursesfilterbar) | `CoursesFilterBar` |
+| `courses/` | [CoursesView.h](#coursesview)        | `CoursesView`     |
 | `courses/` | [CourseDetailView.h](#alias-headers) | (alias)           |
 | `projects/`| [ProjectDetailView.h](#alias-headers) | (alias)          |
+| `projects/`| [ProjectCard.h](#projectcard)        | `ProjectCard`     |
+| `todos/` | [TodoRow.h](#todorow)                | `TodoRow`         |
+| `todos/` | [TodoModel.h](#todomodel)            | `TodoModel`       |
+| `todos/` | [TodoView.h](#todoview)              | `TodoView`        |
+| `pomodoro/`| [PomodoroTimerWidget.h](#pomodorotimerwidget) | `PomodoroTimerWidget` |
+| `calendar/`| [CalendarWidget.h](#calendarwidget)  | `CalendarWidget`  |
+| `calendar/`| [DayDetailsPanel.h](#daydetailspanel) | `DayDetailsPanel` |
 | `analytics/` | [ContributionHeatmap.h](#contributionheatmap) | `ContributionHeatmap` |
 | `analytics/` | [ActivityLogModel.h](#activitylogmodel) | `ActivityLogModel` |
+| `analytics/` | [HeatmapAggregator.h](#heatmapaggregator) | `HeatmapAggregator` |
+| `analytics/` | [AnalyticsSummary.h](#analyticssummary) | `AnalyticsSummary` (stub) |
 | `analytics/` | [AnalyticsView.h](#analyticsview) | `AnalyticsView`   |
 | `settings/`| [SettingsView.h](#settingsview)      | `SettingsView`    |
 | `src/` | [main.cpp](#maincpp)                    | (entry point)     |
@@ -468,10 +483,125 @@ void progressChanged(int value);
 
 ---
 
+## `StatsCard` `[Phase 6 — Task 6.6]`
+
+A compact card showing one statistic: an icon, a title, a large value,
+a subtitle, and an optional badge. Used in `HomeDashboard` v2 and
+`AnalyticsView` v2 for summary numbers (e.g. "3 Active Courses",
+"12 Pomodoros This Week").
+
+```cpp
+explicit StatsCard(QWidget* parent = nullptr);
+
+void setValue(const QString& value);
+void setSubtitle(const QString& subtitle);
+void setBadgeText(const QString& text);
+void setIcon(const QString& iconPath);
+```
+
+**Hover effect:** uses the `setProperty("hover", true/false)` +
+`unpolish(polish)` pattern so QSS can style the hover state without
+subclassing `paintEvent`. The card is a `QFrame` (not `QWidget`) so
+QSS `QFrame` selectors apply.
+
+**Badge:** a small rounded label in the top-right corner, hidden by
+default. `setBadgeText("")` hides it; any non-empty string shows it
+with the primary accent colour.
+
+---
+
+## `CategoryPill` `[Phase 6 — Task 6.7]`
+
+A small horizontal pill showing a category: an 8px coloured dot on the
+left, then the category name. Background is the category colour at
+15% alpha (≈ 38/255). The pill starts **hidden** — call
+`setCategory()` to populate and show it, or `clearCategory()` to hide.
+
+```cpp
+explicit CategoryPill(QWidget* parent = nullptr);
+
+void setCategory(const CategoryData& cat);
+void clearCategory();     // hides the pill
+```
+
+**How the 15% alpha background works:**
+
+```cpp
+// In applyStyle(QColor):
+const int alpha15 = 38;   // 15% of 255 ≈ 38
+const QString rgbaBg = QStringLiteral("rgba(%1, %2, %3, %4)")
+    .arg(color.red()).arg(color.green()).arg(color.blue()).arg(alpha15);
+setStyleSheet(...);
+```
+
+This pattern (colored dot + name + 15% alpha bg) is reused in
+`TodoRow` priority badges and `ProjectCard` priority/deadline badges.
+
+---
+
+## `EmptyState` `[Phase 6 — new shared widget]`
+
+A centered placeholder widget shown when a list or grid has no content.
+Displays a 64×64 icon circle, a title, a description, and an optional
+action button. Used by `CoursesView` when there are no courses or no
+filter results.
+
+```cpp
+explicit EmptyState(QWidget* parent = nullptr);
+
+void setIcon(const QString& iconPath);
+void setTitle(const QString& title);
+void setDescription(const QString& description);
+void setActionText(const QString& text);   // hides the button if empty
+
+signals:
+void actionRequested();
+```
+
+**Layout:** vertically centered in the parent. The icon circle is a
+64×64 `QLabel` with a rounded border. The action button emits
+`actionRequested()` when clicked — the parent view connects this to
+its "add new" flow.
+
+---
+
+## `CategoryModel` `[Phase 5 — Task 5.4]`
+
+`QAbstractListModel` exposing category data (id, name, colour,
+entityCount) via custom roles. Used by `CoursesFilterBar` to populate
+its category dropdown.
+
+```cpp
+enum Roles {
+    IdRole        = Qt::UserRole + 1,
+    NameRole      = Qt::UserRole + 2,
+    ColorRole     = Qt::UserRole + 3,
+    EntityCountRole = Qt::UserRole + 4
+};
+
+explicit CategoryModel(QObject* parent = nullptr);
+
+int      rowCount(...) const override;
+QVariant data(const QModelIndex& index, int role) const override;
+
+public slots:
+void refresh();   // re-fetches from DatabaseManager::fetchAllCategories()
+```
+
+**Refresh wiring:** `refresh()` is connected to
+`DatabaseManager::dataChanged` so the dropdown stays current after any
+mutation. Currently a stub — the full implementation will populate the
+internal `QList<CategoryData>` cache on each `refresh()` call.
+
+---
+
 ## `EntityCard`
 
 A fixed-size (160 × 180 px) card showing one course/project: its
-ring, name, and a "Course"/"Project" type badge.
+ring, name, and a "Course"/"Project" type badge. **v2 additions
+(Task 6.5) are now built** — the card also embeds a `CategoryPill`
+slot and shows a "Paused" status badge when the entity's status is
+`paused`.
 
 ```cpp
 enum class EntityType { Course, Project };
@@ -485,14 +615,19 @@ QString    name()     const;
 
 void setProgress(int percentage);
 void setName(const QString& name);
+void setCategory(const CategoryData& cat);   // [v2 — Task 6.5] populates the embedded CategoryPill
+void setStatus(const QString& status);        // [v2 — Task 6.5] shows "Paused" badge when status == "paused"
 
 signals:
 void clicked(int entityId, EntityType type);
 ```
 
 Hover affordance via `enterEvent`/`leaveEvent` (border colour change).
-Mouse click emits `clicked(id, type)`. **v2 add-ons (Task 6.5) pending:**
-embedded `CategoryPill` slot and a "Paused" badge.
+Mouse click emits `clicked(id, type)`. The embedded `CategoryPill`
+starts hidden; `setCategory()` makes it visible and applies the
+colored dot + 15% alpha background. `setStatus()` adds a small
+amber "Paused" badge in the top-right corner when the entity is
+paused; other statuses show no badge.
 
 ---
 
@@ -646,6 +781,373 @@ them with real subclasses that add type-specific buttons and panels.
 
 ---
 
+## `CoursesFilterBar` `[Phase 6 — Task 6.13]`
+
+A horizontal bar above the courses/projects grid. Contains three parts:
+a search `QLineEdit`, a filter toggle button (opens a collapsible
+panel with Category and Status dropdowns), and an "Add New" button.
+Active filter badges appear below the bar with a "Clear all" link.
+
+```cpp
+explicit CoursesFilterBar(QWidget* parent = nullptr);
+
+void setCategories(const QList<CategoryData>& categories);
+
+signals:
+void filterChanged(const CourseFilter& filter);
+void addNewRequested();
+```
+
+**Debounced search:** the `QLineEdit`'s `textChanged` signal is wired
+to a 200ms `QTimer`. When the timer fires, the current text + dropdown
+values are packed into a `CourseFilter` struct and emitted as
+`filterChanged`. This prevents hitting the database on every keystroke.
+
+**Collapsible filter panel:** clicking the filter toggle button shows/hides
+a `QFrame` containing a category `QComboBox` and a status `QComboBox`.
+Each dropdown change also triggers `filterChanged`.
+
+**Badge row:** when any filter is active (non-empty search, or a
+selected category/status), a row of small badge labels appears below
+the bar. Each badge shows the filter value with an × close button.
+"Clear all" resets every filter and emits `filterChanged` with an
+empty `CourseFilter`.
+
+---
+
+## `CoursesView` `[Phase 7 — Task 7.3]`
+
+The main page for browsing courses and projects. Contains a header
+(title + subtitle with entity count), a `CoursesFilterBar` at the top,
+a responsive `QGridLayout` of `EntityCard` widgets (both Course and
+Project types) in the middle, and an `EmptyState` placeholder when
+there are no items or no filter results.
+
+```cpp
+explicit CoursesView(QWidget* parent = nullptr);
+
+void refreshCards();
+void applyFilter();
+
+signals:
+void courseSelected(int courseId);
+void projectSelected(int projectId);
+void addNewRequested();
+
+private slots:
+void onFilterChanged(const CourseFilter& filter);
+void onAddNewRequested();
+void onCardClicked(int entityId, EntityCard::EntityType type);
+void onDataChanged();   // hooked to DatabaseManager::dataChanged
+```
+
+**Responsive grid breakpoints:**
+
+| Window width | Columns |
+|---|---|
+| < 500 px | 1 |
+| < 700 px | 2 |
+| < 1000 px | 3 |
+| ≥ 1000 px | 4 |
+
+`updateColumnCount()` is called in `resizeEvent` and adjusts the grid.
+When the column count changes, `rebuildGrid()` destroys and recreates
+every card widget.
+
+**Key methods:**
+
+- `refreshCards()` — fetches `fetchAllEntities()` (courses + projects
+  in one call via `kEntitySelectSql` LEFT JOIN), fetches categories
+  for the filter bar and card pills, updates the subtitle label
+  (`"%1 courses and projects"`), then calls `applyFilter()` +
+  `rebuildGrid()`.
+- `applyFilter()` — iterates `m_allEntities`, calls `matchesFilter()`
+  on each, builds `m_filteredEntities`. If zero results, shows
+  `EmptyState` ("No courses or projects match…"). If zero entities at
+  all, shows "No courses or projects yet" with an "Add Your First
+  Item" action button.
+- `rebuildGrid()` — deletes old `EntityCard` widgets, creates new ones
+  from `m_filteredEntities`. Maps `entity.type` ("Course"/"Project")
+  to `EntityCard::EntityType` so project cards render with the correct
+  type badge and emit `projectSelected` on click. Sets `CategoryPill`
+  and status badge on each card.
+- `showEmptyState(noEntitiesAtAll)` — toggles between grid and
+  `EmptyState` widget. Hides the subtitle when empty state is shown.
+
+**Data change subscription:** connects to
+`DatabaseManager::dataChanged` in the constructor. On any DB mutation,
+calls `refreshCards()` to rebuild the entire grid.
+
+---
+
+## `ProjectCard` `[Phase 6 — Task 6.12]`
+
+A card showing one project: its name, a 2-line truncated description,
+a priority badge, a deadline badge (with days-left colour coding),
+a progress bar, a task count, and a team size indicator.
+
+```cpp
+explicit ProjectCard(int projectId, const QString& name,
+                     const QString& description,
+                     QWidget* parent = nullptr);
+
+int  projectId() const;
+
+void setProgress(int percentage);
+void setPriority(const QString& priority);    // "high" / "medium" / "low"
+void setDeadline(const QDate& deadline);
+void setTaskCount(int count);
+void setTeamSize(int size);
+
+signals:
+void clicked(int projectId);
+```
+
+**Priority badge colours:**
+
+| Priority | Hex | Alpha-15 bg |
+|---|---|---|
+| high | `#ef4444` | `rgba(239,68,68,38)` |
+| medium | `#f59e0b` | `rgba(245,158,11,38)` |
+| low | `#6b7280` | `rgba(107,114,128,38)` |
+
+**Deadline days-left colour coding:**
+
+| Days left | Badge colour |
+|---|---|
+| ≤ 3 | Red (`#ef4444`) — urgent |
+| ≤ 7 | Amber (`#f59e0b`) — approaching |
+| > 7 | Gray (`#6b7280`) — comfortable |
+
+Both badges use the same 15% alpha background pattern as `CategoryPill`.
+Hover effect via `setProperty("hover")` + `unpolish/polish`.
+
+---
+
+## `TodoRow` `[Phase 6 — Task 6.10]`
+
+A single row in the todo list. Layout: checkbox | title label | priority
+badge | delete (trash) button. When the checkbox is toggled, the row
+switches to a "completed" visual state: muted text colour, italic font,
+and the priority badge is hidden.
+
+```cpp
+explicit TodoRow(const TodoData& data, QWidget* parent = nullptr);
+
+int  todoId() const;
+bool isCompleted() const;
+
+void setCompleted(bool completed);
+void setTodoData(const TodoData& data);
+
+signals:
+void toggled(int todoId, bool completed);
+void deleteRequested(int todoId);
+```
+
+**Priority badge:** same pattern as `CategoryPill` — coloured dot +
+name + 15% alpha background. Priority colours match `ProjectCard`
+(high=red, medium=amber, low=gray).
+
+**Completed state:** toggling the checkbox calls `setCompleted()`,
+which applies `setProperty("completed")` + `unpolish/polish` for QSS
+to style the row differently (muted colour, italic). The checkbox
+itself is a `QCheckBox` whose `toggled` signal emits `TodoRow::toggled`.
+
+---
+
+## `TodoModel` `[Phase 5 — Task 5.5]`
+
+A `QObject` (not a widget) that manages two `QSortFilterProxyModel`
+instances — one for active todos and one for completed todos. Both
+proxies sit on top of a shared `TodoBaseModel` (a `QAbstractListModel`
+that holds the full todo list from the database).
+
+```cpp
+// Inner class:
+class TodoBaseModel : public QAbstractListModel {
+    // exposes TodoData rows via custom roles
+};
+
+// Outer class:
+class TodoModel : public QObject {
+    Q_OBJECT
+public:
+    explicit TodoModel(QObject* parent = nullptr);
+
+    QSortFilterProxyModel* activeModel();    // filters: completed == false
+    QSortFilterProxyModel* completedModel(); // filters: completed == true
+
+    int activeCount() const;
+    int completedCount() const;
+
+    void refresh();   // re-fetches from DatabaseManager::fetchTodos()
+
+signals:
+    void activeCountChanged(int count);
+    void completedCountChanged(int count);
+};
+```
+
+**How the two-proxy pattern works:** `TodoBaseModel` loads every todo
+from the DB. `activeModel()` returns a proxy that accepts only rows
+where `Completed == 0`. `completedModel()` returns a proxy that
+accepts only rows where `Completed == 1`. When `refresh()` reloads
+the base model, both proxies automatically re-filter, and the count
+signals fire so the view can update its header stats.
+
+---
+
+## `TodoView` `[Phase 7 — Task 7.7]`
+
+The main page for managing todos. Contains a header with two stat boxes
+(active count, completed count), an add-task input bar (QLineEdit +
+submit button), and two scrollable sections of `TodoRow` widgets
+(Active and Completed).
+
+```cpp
+explicit TodoView(QWidget* parent = nullptr);
+
+public slots:
+void onDataChanged();   // hooked to DatabaseManager::dataChanged
+
+private slots:
+void onAddTodo();       // reads input text, calls addTodo(), clears input
+void onTodoToggled(int todoId, bool completed);
+void onTodoDeleteRequested(int todoId);
+```
+
+**Add-task input:** a `QLineEdit` with placeholder text "Add a new
+task…" and a + button. Pressing Enter or clicking + calls `onAddTodo()`,
+which reads the text, calls `DatabaseManager::addTodo(title, "medium")`,
+and clears the input. The `dataChanged` signal from the DB triggers
+`onDataChanged()` which rebuilds both sections.
+
+**Stat boxes:** two `QLabel` widgets in the header showing
+"X active" and "Y completed". Updated via `TodoModel::activeCountChanged`
+and `completedCountChanged` signals.
+
+---
+
+## `PomodoroTimerWidget` `[Phase 6 — Task 6.11]`
+
+A self-contained timer widget that embeds a `CircularProgressBar`
+(256px diameter) driven by a 1Hz `QTimer`. The centre label shows
+MM:SS via `CircularProgressBar::setCustomText`. Supports two modes
+(Work / Break) and three states (Idle / Running / Paused).
+
+```cpp
+enum Mode  { Work, Break };
+enum State { Idle, Running, Paused };
+
+explicit PomodoroTimerWidget(QWidget* parent = nullptr);
+
+Mode  mode() const;
+State state() const;
+
+void startTimer();
+void pauseTimer();
+void resumeTimer();
+void resetTimer();
+
+signals:
+void timerCompleted();   // emitted when a work or break session finishes
+```
+
+**Auto-switch on completion:** when a Work session reaches 0:00, the
+widget automatically switches to Break mode and starts the break timer.
+When a Break session finishes, it switches back to Work (Idle state).
+
+**State persistence:** on every state change (start, pause, resume,
+mode switch), the widget calls `DatabaseManager::setSetting()` to save
+the current mode, state, remaining seconds, and associated course ID.
+On construction, it reads these settings back and restores the timer
+to where it was — even across app restarts.
+
+**Button visibility by state:**
+
+| State | Visible buttons |
+|---|---|
+| Idle | Start, Reset |
+| Running | Pause, Reset |
+| Paused | Resume, Reset |
+
+---
+
+## `CalendarWidget` `[Phase 6 — Task 6.8]`
+
+A custom-painted month grid (NOT `QCalendarWidget`). Shows a header
+with ◀ Month Year ▶ navigation, day-of-week labels, and a 7×6 grid
+of day cells. The current day is highlighted with a primary accent
+ring. Dates with content (todos, notes, completed items) show small
+indicator dots below the day number.
+
+```cpp
+explicit CalendarWidget(QWidget* parent = nullptr);
+
+QDate selectedDate() const;
+void setSelectedDate(const QDate& date);
+void setIndicatorDates(const QList<QDate>& dates);
+
+signals:
+void dateSelected(const QDate& date);
+
+protected:
+void paintEvent(QPaintEvent*) override;
+void keyPressEvent(QKeyEvent*) override;
+void mousePressEvent(QMouseEvent*) override;
+```
+
+**Grid constants:**
+
+```cpp
+COLS = 7; ROWS = 6; CELL_W = 40; CELL_H = 32; DOT_SIZE = 4;
+```
+
+**Keyboard navigation:** Left/Right arrows move the selected day by
+one day; Up/Down move by one week. This lets the user navigate without
+a mouse.
+
+**Indicator dots:** `setIndicatorDates()` provides a list of dates
+that have content. For each such date, a small 4px dot is painted
+below the day number in the cell. The dot colour matches the primary
+accent.
+
+---
+
+## `DayDetailsPanel` `[Phase 6 — Task 6.9]`
+
+A side panel that shows the details for one calendar day. Contains a
+header (formatted date + close × button) and three sections:
+
+1. **To Do** — a list of `TodoRow`-style items with an add-task input
+2. **Completed** — a strikethrough list of completed items
+3. **Notes** — a `QTextEdit` for free-text notes
+
+```cpp
+explicit DayDetailsPanel(QWidget* parent = nullptr);
+
+void setDate(const QDate& date);
+void setData(const CalendarDayData& data);
+
+signals:
+void todoAdded(const QString& title);
+void todoToggled(int index, bool completed);
+void notesChanged(const QString& notes);
+void closed();
+```
+
+**Empty state:** when a day has no todos, completed items, or notes,
+each section shows a placeholder label ("No todos for this day",
+etc.).
+
+**Data flow:** `setData()` populates all three sections from a
+`CalendarDayData` struct. The add-task input calls
+`DatabaseManager::addCalendarTodo()` and emits `todoAdded`. The notes
+`QTextEdit` saves on `textChanged` via `DatabaseManager::updateCalendarNotes()`.
+
+---
+
 ## `ContributionHeatmap`
 
 GitHub-style 53×7 grid of coloured cells, one cell per day of a year.
@@ -731,9 +1233,80 @@ QMap<QDate, int> getDailyActivityCounts(const QDate& from, const QDate& to) cons
 - `itemName(int)` caches `SessionsTasks` name lookups per refresh —
   prevents N queries per repaint when the table view scrolls.
 
-**Used by:** `AnalyticsView` (heatmap input and the table). Once
-Phase 5.6's `HeatmapAggregator` lands, the heatmap will read from the
-aggregator instead of directly from the model.
+**Used by:** `AnalyticsView` (heatmap input and the table). The
+`HeatmapAggregator` (Phase 5.6, now built) provides the bucketisation
+logic; `AnalyticsView` can choose to use the aggregator's
+`RecentBuckets` mode instead of its own inline bucketisation.
+
+---
+
+## `HeatmapAggregator` `[Phase 5 — Task 5.6]`
+
+A `QObject` that aggregates activity data (from `ActivityLog`,
+completed `Todos`, and `PomodoroSessions`) into per-day intensity
+buckets suitable for feeding into `ContributionHeatmap`.
+
+```cpp
+enum AggregationMode {
+    RecentBuckets,      // fixed thresholds: 0 / 1 / 2-3 / 4-6 / 7+
+    NormalizedRange     // floor((count / maxCount) * 4)
+};
+
+explicit HeatmapAggregator(QObject* parent = nullptr);
+
+QMap<QDate, int> aggregate(AggregationMode mode,
+                            const QDate& from,
+                            const QDate& to) const;
+```
+
+**RecentBuckets mode:** maps each day's total activity count to one
+of five fixed buckets:
+
+| Count | Bucket (intensity) |
+|---|---|
+| 0 | 0 |
+| 1 | 1 |
+| 2–3 | 2 |
+| 4–6 | 3 |
+| 7+ | 4 |
+
+This is the same bucketisation that `AnalyticsView::loadYear()` uses
+inline today. The aggregator centralises it so other views can reuse
+the logic.
+
+**NormalizedRange mode:** divides each day's count by the maximum
+count across the entire date range, then maps `floor(ratio * 4)` to
+intensity 0–4. This produces a smoother distribution when activity
+is very high (e.g. all days would be bucket 4 under RecentBuckets).
+
+**Data sources:** the aggregator reads from three DB queries:
+`DatabaseManager::getActivityLog(from, to)` for progress changes,
+`DatabaseManager::fetchTodos()` for completed todos, and
+`DatabaseManager::fetchPomodoroSessions()` for pomodoro completions.
+Each source contributes +1 to the day's count.
+
+---
+
+## `AnalyticsSummary` `[Phase 5 — Task 5.7]` (stub)
+
+A static compute function that returns an `AnalyticsSummary` struct
+(streaks, total hours, average per day, week-over-week change).
+Currently a stub — returns an empty struct with all fields zeroed.
+Full implementation is scheduled for Phase 7.9 when the analytics
+page gets its charts.
+
+```cpp
+// include/analytics/AnalyticsSummary.h
+static AnalyticsSummary compute(const QDate& from,
+                                const QDate& to);
+```
+
+**Stub behaviour:** `compute()` returns `AnalyticsSummary{}` with
+`currentStreak = 0`, `longestStreak = 0`, `totalHours = 0.0`,
+`avgPerDay = 0.0`, `wowChange = 0.0`. The real implementation will
+walk the activity log, compute streaks from consecutive active days,
+sum pomodoro durations for hours, and compare the current week's
+total to the previous week's for WoW change.
 
 ---
 
@@ -808,13 +1381,24 @@ running app today.
 | `CourseDetailView::backRequested`        | `MainWindow::onDetailBackRequested` | `MainWindow::setupConnections` |
 | `ProjectDetailView::backRequested`       | `MainWindow::onDetailBackRequested` | `MainWindow::setupConnections` |
 | `EntityCard::clicked`                    | `HomeDashboard` lambdas → emit `courseSelected` / `projectSelected` | `HomeDashboard::createCard` |
+| `EntityCard::clicked`                    | `CoursesView` lambdas → emit `courseSelected` / `projectSelected` | `CoursesView::refreshCards` |
+| `ProjectCard::clicked`                   | `CoursesView` lambdas → emit `projectSelected` | `CoursesView::refreshCards` |
+| `CoursesFilterBar::filterChanged`        | `CoursesView::applyFilter`          | `CoursesView` ctor |
+| `CoursesFilterBar::addNewRequested`      | `CoursesView` → emit `addNewRequested` | `CoursesView` ctor |
+| `EmptyState::actionRequested`            | `CoursesView` → emit `addNewRequested` | `CoursesView::showEmptyState` |
 | `DatabaseManager::dataChanged`           | `HomeDashboard::onDataChanged`      | `HomeDashboard::setupUi` |
 | `DatabaseManager::dataChanged`           | `EntityDetailView::onDataChanged`   | `EntityDetailView` ctor |
 | `DatabaseManager::dataChanged`           | `AnalyticsView::onDataChanged`      | `AnalyticsView` ctor |
+| `DatabaseManager::dataChanged`           | `CoursesView::onDataChanged`        | `CoursesView` ctor |
+| `DatabaseManager::dataChanged`           | `TodoView::onDataChanged`           | `TodoView` ctor |
+| `DatabaseManager::dataChanged`           | `CategoryModel::refresh`            | `CategoryModel` ctor |
 | `SessionTaskRow::progressChanged`        | `UnitExpandableWidget::onChildProgressChanged` | `UnitExpandableWidget` per-row |
 | `UnitExpandableWidget::sessionTaskProgressChanged` | `EntityDetailView::onSessionProgressChanged` | `EntityDetailView::rebuildUnits` |
 | `SessionTaskRow::nameChanged`            | `UnitExpandableWidget::onChildNameChanged` | per-row |
 | `UnitExpandableWidget::sessionTaskRenamed` | `EntityDetailView::onSessionRenamed` | per-unit |
+| `TodoRow::toggled`                       | `TodoView::onTodoToggled`           | `TodoView` per-row |
+| `TodoRow::deleteRequested`               | `TodoView::onTodoDeleteRequested`   | `TodoView` per-row |
+| `PomodoroTimerWidget::timerCompleted`    | (auto-switches mode internally)     | `PomodoroTimerWidget` |
 
 ---
 
@@ -823,23 +1407,38 @@ running app today.
 | File | LoC |
 |---|---|
 | `src/core/DatabaseManager.cpp` | 886 |
+| `src/courses/CoursesView.cpp` | 339 |
 | `src/courses/EntityDetailView.cpp` | 287 |
+| `src/pomodoro/PomodoroTimerWidget.cpp` | 247 |
 | `include/core/DataStructures.h` | 243 |
+| `src/calendar/CalendarWidget.cpp` | 252 |
+| `src/calendar/DayDetailsPanel.cpp` | 209 |
+| `src/projects/ProjectCard.cpp` | 210 |
+| `src/courses/CoursesFilterBar.cpp` | 175 |
 | `src/analytics/ContributionHeatmap.cpp` | 169 |
+| `src/todos/TodoView.cpp` | 199 |
 | `src/core/DataImporter.cpp` | 156 |
 | `src/analytics/ActivityLogModel.cpp` | 155 |
 | `src/analytics/AnalyticsView.cpp` | 153 |
 | `src/courses/UnitExpandableWidget.cpp` | 149 |
 | `src/courses/SessionTaskRow.cpp` | 145 |
+| `src/todos/TodoRow.cpp` | 140 |
 | `include/core/DatabaseManager.h` | 138 |
 | `src/shared/MainWindow.cpp` | 128 |
 | `src/shared/HomeDashboard.cpp` | 125 |
 | `src/settings/SettingsView.cpp` | 124 |
+| `src/shared/StatsCard.cpp` | 100 |
 | `src/shared/CircularProgressBar.cpp` | 105 |
+| `src/shared/EmptyState.cpp` | ~80 |
+| `src/shared/CategoryPill.cpp` | 71 |
+| `src/analytics/HeatmapAggregator.cpp` | 94 |
+| `src/shared/CategoryModel.cpp` | 45 |
+| `src/todos/TodoModel.cpp` | 43 |
+| `src/analytics/AnalyticsSummary.cpp` | 10 |
 | `src/courses/EntityCard.cpp` | 84 |
 | `src/shared/SideNavigationBar.cpp` | 79 |
 | `src/core/DataExporter.cpp` | 77 |
-| **Total** | **~3,900 LoC** (incl. all headers) |
+| **Total** | **~5,600 LoC** (incl. all headers) |
 
 ---
 

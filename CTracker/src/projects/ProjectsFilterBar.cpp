@@ -1,4 +1,4 @@
-#include "courses/CoursesFilterBar.h"
+#include "projects/ProjectsFilterBar.h"
 
 #include "core/DataStructures.h"
 
@@ -11,13 +11,13 @@
 #include <QTimer>
 #include <QFrame>
 
-CoursesFilterBar::CoursesFilterBar(QWidget* parent)
+ProjectsFilterBar::ProjectsFilterBar(QWidget* parent)
     : QWidget(parent) {
-    setObjectName("coursesFilterBar");
+    setObjectName("projectsFilterBar");
     setupUi();
 }
 
-void CoursesFilterBar::setupUi() {
+void ProjectsFilterBar::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(4);
@@ -27,16 +27,16 @@ void CoursesFilterBar::setupUi() {
     topRow->setSpacing(8);
 
     m_searchInput = new QLineEdit(this);
-    m_searchInput->setObjectName("coursesSearchInput");
-    m_searchInput->setPlaceholderText(QStringLiteral("Search courses and projects..."));
+    m_searchInput->setObjectName("projectsSearchInput");
+    m_searchInput->setPlaceholderText(QStringLiteral("Search projects..."));
     m_searchInput->setClearButtonEnabled(true);
 
     m_filterToggleBtn = new QPushButton(QStringLiteral("Filter"), this);
-    m_filterToggleBtn->setObjectName("coursesFilterToggle");
+    m_filterToggleBtn->setObjectName("projectsFilterToggle");
     m_filterToggleBtn->setCheckable(true);
 
     m_addNewBtn = new QPushButton(QStringLiteral("+ Add New"), this);
-    m_addNewBtn->setObjectName("coursesAddNewBtn");
+    m_addNewBtn->setObjectName("projectsAddNewBtn");
 
     topRow->addWidget(m_searchInput, 1);
     topRow->addWidget(m_filterToggleBtn);
@@ -45,37 +45,41 @@ void CoursesFilterBar::setupUi() {
 
     // ── Collapsible filter panel ──
     m_filterPanel = new QWidget(this);
-    m_filterPanel->setObjectName("coursesFilterPanel");
+    m_filterPanel->setObjectName("projectsFilterPanel");
     m_filterPanel->setVisible(false);  // collapsed by default
 
     auto* filterLayout = new QHBoxLayout(m_filterPanel);
     filterLayout->setContentsMargins(8, 4, 8, 4);
     filterLayout->setSpacing(12);
 
-    m_categoryCombo = new QComboBox(this);
-    m_categoryCombo->setObjectName("coursesCategoryCombo");
-    m_categoryCombo->addItem(QStringLiteral("All Categories"), -1);
+    m_priorityCombo = new QComboBox(this);
+    m_priorityCombo->setObjectName("projectsPriorityCombo");
+    m_priorityCombo->addItem(QStringLiteral("All Priorities"), QStringLiteral("all"));
+    m_priorityCombo->addItem(QStringLiteral("High"),           QStringLiteral("high"));
+    m_priorityCombo->addItem(QStringLiteral("Medium"),         QStringLiteral("medium"));
+    m_priorityCombo->addItem(QStringLiteral("Low"),            QStringLiteral("low"));
 
     m_statusCombo = new QComboBox(this);
-    m_statusCombo->setObjectName("coursesStatusCombo");
+    m_statusCombo->setObjectName("projectsStatusCombo");
     m_statusCombo->addItem(QStringLiteral("All Statuses"), QStringLiteral("all"));
     m_statusCombo->addItem(QStringLiteral("Active"),       QStringLiteral("active"));
     m_statusCombo->addItem(QStringLiteral("Paused"),       QStringLiteral("paused"));
+    m_statusCombo->addItem(QStringLiteral("Completed"),    QStringLiteral("completed"));
 
-    filterLayout->addWidget(m_categoryCombo);
+    filterLayout->addWidget(m_priorityCombo);
     filterLayout->addWidget(m_statusCombo);
     filterLayout->addStretch();
     mainLayout->addWidget(m_filterPanel);
 
     // ── Filter badges row ──
     m_badgesRow = new QWidget(this);
-    m_badgesRow->setObjectName("coursesBadgesRow");
+    m_badgesRow->setObjectName("projectsBadgesRow");
     auto* badgesLayout = new QHBoxLayout(m_badgesRow);
     badgesLayout->setContentsMargins(8, 2, 8, 2);
     badgesLayout->setSpacing(4);
 
     m_clearAllBtn = new QPushButton(QStringLiteral("Clear all"), this);
-    m_clearAllBtn->setObjectName("coursesClearAllBtn");
+    m_clearAllBtn->setObjectName("projectsClearAllBtn");
     badgesLayout->addWidget(m_clearAllBtn);
     badgesLayout->addStretch();
     m_badgesRow->setVisible(false);  // hidden when no active filters
@@ -88,74 +92,66 @@ void CoursesFilterBar::setupUi() {
 
     // ── Signal wiring ──
     connect(m_searchInput, &QLineEdit::textChanged,
-            this, &CoursesFilterBar::onSearchTextChanged);
+            this, &ProjectsFilterBar::onSearchTextChanged);
     connect(m_debounceTimer, &QTimer::timeout,
-            this, &CoursesFilterBar::onSearchDebounced);
-    connect(m_categoryCombo, &QComboBox::currentIndexChanged,
-            this, &CoursesFilterBar::onCategoryChanged);
+            this, &ProjectsFilterBar::onSearchDebounced);
+    connect(m_priorityCombo, &QComboBox::currentIndexChanged,
+            this, &ProjectsFilterBar::onPriorityChanged);
     connect(m_statusCombo, &QComboBox::currentIndexChanged,
-            this, &CoursesFilterBar::onStatusChanged);
+            this, &ProjectsFilterBar::onStatusChanged);
     connect(m_filterToggleBtn, &QPushButton::toggled,
-            this, &CoursesFilterBar::onToggleFilterPanel);
+            this, &ProjectsFilterBar::onToggleFilterPanel);
     connect(m_addNewBtn, &QPushButton::clicked,
-            this, &CoursesFilterBar::onAddNewClicked);
+            this, &ProjectsFilterBar::onAddNewClicked);
     connect(m_clearAllBtn, &QPushButton::clicked,
-            this, &CoursesFilterBar::onClearAllFilters);
+            this, &ProjectsFilterBar::onClearAllFilters);
 }
 
 // ── Public API ──────────────────────────────────────────────
 
-CourseFilter CoursesFilterBar::currentFilter() const {
+ProjectFilter ProjectsFilterBar::currentFilter() const {
     return m_currentFilter;
-}
-
-void CoursesFilterBar::setCategories(const QList<CategoryData>& cats) {
-    m_categoryCombo->clear();
-    m_categoryCombo->addItem(QStringLiteral("All Categories"), -1);
-    for (const auto& cat : cats) {
-        m_categoryCombo->addItem(cat.name, cat.id);
-    }
 }
 
 // ── Private slots ───────────────────────────────────────────
 
-void CoursesFilterBar::onSearchTextChanged() {
+void ProjectsFilterBar::onSearchTextChanged() {
     m_debounceTimer->start();  // restart 200 ms debounce
 }
 
-void CoursesFilterBar::onSearchDebounced() {
+void ProjectsFilterBar::onSearchDebounced() {
     m_currentFilter.search = m_searchInput->text().trimmed();
     emitFilter();
 }
 
-void CoursesFilterBar::onCategoryChanged(int index) {
-    QVariant data = m_categoryCombo->itemData(index);
-    m_currentFilter.categoryId = data.toInt();
+void ProjectsFilterBar::onPriorityChanged(int index) {
+    QVariant data = m_priorityCombo->itemData(index);
+    m_currentFilter.priority = data.toString();
     updateFilterBadges();
     emitFilter();
 }
 
-void CoursesFilterBar::onStatusChanged(int index) {
+void ProjectsFilterBar::onStatusChanged(int index) {
     QVariant data = m_statusCombo->itemData(index);
     m_currentFilter.status = data.toString();
     updateFilterBadges();
     emitFilter();
 }
 
-void CoursesFilterBar::onToggleFilterPanel() {
+void ProjectsFilterBar::onToggleFilterPanel() {
     m_filterPanel->setVisible(m_filterToggleBtn->isChecked());
 }
 
-void CoursesFilterBar::onAddNewClicked() {
+void ProjectsFilterBar::onAddNewClicked() {
     emit addNewRequested();
 }
 
-void CoursesFilterBar::onClearAllFilters() {
+void ProjectsFilterBar::onClearAllFilters() {
     m_searchInput->clear();
-    m_categoryCombo->setCurrentIndex(0);  // "All Categories"
+    m_priorityCombo->setCurrentIndex(0);  // "All Priorities"
     m_statusCombo->setCurrentIndex(0);    // "All Statuses"
     m_currentFilter.search.clear();
-    m_currentFilter.categoryId = -1;
+    m_currentFilter.priority = "all";
     m_currentFilter.status = "all";
     updateFilterBadges();
     emitFilter();
@@ -163,13 +159,13 @@ void CoursesFilterBar::onClearAllFilters() {
 
 // ── Private helpers ─────────────────────────────────────────
 
-void CoursesFilterBar::emitFilter() {
+void ProjectsFilterBar::emitFilter() {
     emit filterChanged(m_currentFilter);
 }
 
-void CoursesFilterBar::updateFilterBadges() {
+void ProjectsFilterBar::updateFilterBadges() {
     bool hasActiveFilter = !m_currentFilter.search.isEmpty()
-        || m_currentFilter.categoryId >= 0
+        || m_currentFilter.priority != "all"
         || m_currentFilter.status != "all";
     m_badgesRow->setVisible(hasActiveFilter);
 }

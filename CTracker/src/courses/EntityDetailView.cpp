@@ -13,6 +13,16 @@
 #include "courses/UnitExpandableWidget.h"
 #include "core/DatabaseManager.h"
 
+// ============================================================
+//  EntityDetailView — shared base for CourseDetailView and
+//  ProjectDetailView (Tasks 7.5 / 7.6).
+//
+//  Provides the common scaffolding: title bar with back button,
+//  name label, overall-progress ring, add-unit / add-session /
+//  delete buttons, and a scroll area of UnitExpandableWidget
+//  items. Subclasses extend the title bar and content area.
+// ============================================================
+
 EntityDetailView::EntityDetailView(EntityCard::EntityType type, QWidget* parent)
     : QWidget(parent),
       m_type(type) {
@@ -22,41 +32,41 @@ EntityDetailView::EntityDetailView(EntityCard::EntityType type, QWidget* parent)
 }
 
 void EntityDetailView::setupUi() {
-    auto* outer = new QVBoxLayout(this);
-    outer->setContentsMargins(16, 16, 16, 16);
-    outer->setSpacing(12);
+    m_outerLayout = new QVBoxLayout(this);
+    m_outerLayout->setContentsMargins(16, 16, 16, 16);
+    m_outerLayout->setSpacing(12);
 
     // ---- Title bar ----
-    auto* titleBar = new QWidget(this);
-    auto* titleLayout = new QHBoxLayout(titleBar);
-    titleLayout->setContentsMargins(0, 0, 0, 0);
-    titleLayout->setSpacing(12);
+    m_titleBar = new QWidget(this);
+    m_titleLayout = new QHBoxLayout(m_titleBar);
+    m_titleLayout->setContentsMargins(0, 0, 0, 0);
+    m_titleLayout->setSpacing(12);
 
-    m_backBtn = new QPushButton(QStringLiteral("\u2190 Back"), titleBar);   // ←
+    m_backBtn = new QPushButton(QStringLiteral("\u2190 Back"), m_titleBar);   // ←
     m_backBtn->setFlat(true);
 
-    m_titleLabel = new QLabel(tr("(no entity loaded)"), titleBar);
+    m_titleLabel = new QLabel(tr("(no entity loaded)"), m_titleBar);
     m_titleLabel->setObjectName("detailTitle");
 
-    m_overallRing = new CircularProgressBar(titleBar);
+    m_overallRing = new CircularProgressBar(m_titleBar);
     m_overallRing->setFixedSize(64, 64);
     m_overallRing->setLineWidth(8);
 
-    m_addUnitBtn    = new QPushButton(tr("+ Unit"), titleBar);
+    m_addUnitBtn    = new QPushButton(tr("+ Unit"), m_titleBar);
     m_addSessionBtn = new QPushButton(
         m_type == EntityCard::EntityType::Course ? tr("+ Session") : tr("+ Task"),
-        titleBar);
-    m_deleteBtn     = new QPushButton(tr("Delete"), titleBar);
+        m_titleBar);
+    m_deleteBtn     = new QPushButton(tr("Delete"), m_titleBar);
     m_deleteBtn->setObjectName("dangerButton");
 
-    titleLayout->addWidget(m_backBtn);
-    titleLayout->addWidget(m_titleLabel, 1);
-    titleLayout->addWidget(m_overallRing);
-    titleLayout->addWidget(m_addUnitBtn);
-    titleLayout->addWidget(m_addSessionBtn);
-    titleLayout->addWidget(m_deleteBtn);
+    m_titleLayout->addWidget(m_backBtn);
+    m_titleLayout->addWidget(m_titleLabel, 1);
+    m_titleLayout->addWidget(m_overallRing);
+    m_titleLayout->addWidget(m_addUnitBtn);
+    m_titleLayout->addWidget(m_addSessionBtn);
+    m_titleLayout->addWidget(m_deleteBtn);
 
-    outer->addWidget(titleBar);
+    m_outerLayout->addWidget(m_titleBar);
 
     // ---- Units scroll area ----
     m_scrollArea = new QScrollArea(this);
@@ -70,7 +80,7 @@ void EntityDetailView::setupUi() {
     m_unitsLayout->setAlignment(Qt::AlignTop);
 
     m_scrollArea->setWidget(m_unitsContainer);
-    outer->addWidget(m_scrollArea, 1);
+    m_outerLayout->addWidget(m_scrollArea, 1);
 
     connect(m_backBtn,       &QPushButton::clicked, this, &EntityDetailView::backRequested);
     connect(m_addUnitBtn,    &QPushButton::clicked, this, &EntityDetailView::onAddUnitClicked);

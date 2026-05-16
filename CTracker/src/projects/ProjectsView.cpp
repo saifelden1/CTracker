@@ -1,7 +1,7 @@
-#include "courses/CoursesView.h"
+#include "projects/ProjectsView.h"
 
-#include "courses/CoursesFilterBar.h"
-#include "courses/EntityCard.h"
+#include "projects/ProjectsFilterBar.h"
+#include "projects/ProjectCard.h"
 #include "shared/EmptyState.h"
 #include "core/DatabaseManager.h"
 
@@ -13,12 +13,12 @@
 #include <QLabel>
 
 // ============================================================
-//  CoursesView — Task 7.3
+//  ProjectsView — Task 7.4
 //
-//  The main page for browsing courses and projects. Embeds a
-//  CoursesFilterBar at the top and a responsive QGridLayout of
-//  EntityCard widgets below. An EmptyState widget is shown when
-//  there are no entities at all or when the active filter yields
+//  The main page for browsing projects. Embeds a
+//  ProjectsFilterBar at the top and a responsive QGridLayout of
+//  ProjectCard widgets below. An EmptyState widget is shown when
+//  there are no projects at all or when the active filter yields
 //  zero results.
 //
 //  Responsive breakpoints (based on available scroll-area width):
@@ -28,13 +28,17 @@
 //    ≥ 1000 px → 4 columns
 //
 //  The view subscribes to DatabaseManager::dataChanged so any
-//  mutation (add, rename, delete, status change, category change)
+//  mutation (add, rename, delete, status change, priority change)
 //  triggers a full refresh of the card grid.
+//
+//  Note: Each project card requires fetching ProjectMetaData via
+//  getProjectMeta(). The task notes suggest batching to one JOIN
+//  later for performance optimization.
 // ============================================================
 
-CoursesView::CoursesView(QWidget* parent)
+ProjectsView::ProjectsView(QWidget* parent)
     : QWidget(parent) {
-    setObjectName("coursesView");
+    setObjectName("projectsView");
     setupUi();
 
     // Initial data load
@@ -42,42 +46,35 @@ CoursesView::CoursesView(QWidget* parent)
 
     // Subscribe to live DB updates
     connect(DatabaseManager::instance(), &DatabaseManager::dataChanged,
-            this, &CoursesView::onDataChanged);
+            this, &ProjectsView::onDataChanged);
 }
 
-void CoursesView::setupUi() {
+void ProjectsView::setupUi() {
     auto* outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(24, 24, 24, 24);
     outerLayout->setSpacing(16);
 
     // ── Header label ──
-    auto* headerLabel = new QLabel(QStringLiteral("Courses"), this);
-    headerLabel->setObjectName("coursesViewHeader");
+    auto* headerLabel = new QLabel(QStringLiteral("Projects"), this);
+    headerLabel->setObjectName("projectsViewHeader");
     QFont headerFont = headerLabel->font();
     headerFont.setWeight(QFont::Medium);
     headerFont.setPointSize(18);
     headerLabel->setFont(headerFont);
     outerLayout->addWidget(headerLabel);
 
-    // ── Subtitle: entity count ──
-    m_subtitleLabel = new QLabel(this);
-    m_subtitleLabel->setObjectName("coursesViewSubtitle");
-    m_subtitleLabel->setStyleSheet(
-        QStringLiteral("QLabel#coursesViewSubtitle { color: #9ca3af; }"));
-    outerLayout->addWidget(m_subtitleLabel);
-
     // ── Filter bar ──
-    m_filterBar = new CoursesFilterBar(this);
+    m_filterBar = new ProjectsFilterBar(this);
     outerLayout->addWidget(m_filterBar);
 
-    connect(m_filterBar, &CoursesFilterBar::filterChanged,
-            this, &CoursesView::onFilterChanged);
-    connect(m_filterBar, &CoursesFilterBar::addNewRequested,
-            this, &CoursesView::onAddNewRequested);
+    connect(m_filterBar, &ProjectsFilterBar::filterChanged,
+            this, &ProjectsView::onFilterChanged);
+    connect(m_filterBar, &ProjectsFilterBar::addNewRequested,
+            this, &ProjectsView::onAddNewRequested);
 
     // ── Scroll area containing the grid ──
     m_scrollArea = new QScrollArea(this);
-    m_scrollArea->setObjectName("coursesScrollArea");
+    m_scrollArea->setObjectName("projectsScrollArea");
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setFrameShape(QFrame::NoFrame);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -93,11 +90,11 @@ void CoursesView::setupUi() {
 
     // ── Empty state (stacked on top of scroll area, hidden by default) ──
     m_emptyState = new EmptyState(this);
-    m_emptyState->setObjectName("coursesEmptyState");
-    m_emptyState->setTitle(QStringLiteral("No courses or projects yet"));
+    m_emptyState->setObjectName("projectsEmptyState");
+    m_emptyState->setTitle(QStringLiteral("No projects yet"));
     m_emptyState->setDescription(
-        QStringLiteral("Get started by adding your first course or project to begin tracking your progress."));
-    m_emptyState->setActionLabel(QStringLiteral("Add Your First Item"));
+        QStringLiteral("Get started by adding your first project to begin tracking your work."));
+    m_emptyState->setActionLabel(QStringLiteral("Add Your First Project"));
     m_emptyState->setVisible(false);
 
     // We overlay the empty state inside the scroll area's viewport region.
@@ -105,61 +102,49 @@ void CoursesView::setupUi() {
     // at the same stretch factor as scroll area, and toggle visibility.
     outerLayout->addWidget(m_emptyState, 1);
     connect(m_emptyState, &EmptyState::actionRequested,
-            this, &CoursesView::onAddNewRequested);
+            this, &ProjectsView::onAddNewRequested);
 }
 
 // ── Public slot wiring ────────────────────────────────────────
 
-void CoursesView::onFilterChanged(const CourseFilter& filter) {
+void ProjectsView::onFilterChanged(const ProjectFilter& filter) {
     m_currentFilter = filter;
     applyFilter();
     rebuildGrid();
 }
 
-void CoursesView::onAddNewRequested() {
+void ProjectsView::onAddNewRequested() {
     emit addNewRequested();
 }
 
-void CoursesView::onCardClicked(int entityId, EntityCard::EntityType type) {
-    if (type == EntityCard::EntityType::Course) {
-        emit courseSelected(entityId);
-    } else {
-        emit projectSelected(entityId);
-    }
+void ProjectsView::onCardClicked(int projectId) {
+    emit projectSelected(projectId);
 }
 
-void CoursesView::onDataChanged() {
+void ProjectsView::onDataChanged() {
     refreshCards();
 }
 
 // ── Resize handling ───────────────────────────────────────────
 
-void CoursesView::resizeEvent(QResizeEvent* event) {
+void ProjectsView::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
     updateColumnCount();
 }
 
 // ── Data management ───────────────────────────────────────────
 
-void CoursesView::refreshCards() {
+void ProjectsView::refreshCards() {
     auto* db = DatabaseManager::instance();
 
-    // Fetch all entities (courses + projects) — the CoursesView grid
-    // displays both, matching the React reference design.
-    m_allEntities = db->fetchAllEntities();
+    // Fetch all projects (includes category/status via LEFT JOIN)
+    m_allProjects = db->fetchAllProjects();
 
-    // Fetch categories for the filter bar and card pills
-    m_categories = db->fetchAllCategories();
-    m_filterBar->setCategories(m_categories);
-
-    // Update subtitle with entity count
-    if (m_allEntities.isEmpty()) {
-        m_subtitleLabel->setText(
-            QStringLiteral("Start tracking your courses and projects"));
-    } else {
-        m_subtitleLabel->setText(
-            QStringLiteral("%1 courses and projects")
-                .arg(m_allEntities.size()));
+    // Fetch metadata for each project
+    // NOTE: Task 7.4 suggests batching to one JOIN later for performance
+    m_projectMeta.clear();
+    for (const EntityData& project : m_allProjects) {
+        m_projectMeta.insert(project.id, db->getProjectMeta(project.id));
     }
 
     // Apply current filter and rebuild
@@ -167,56 +152,56 @@ void CoursesView::refreshCards() {
     rebuildGrid();
 }
 
-void CoursesView::applyFilter() {
-    m_filteredEntities.clear();
+void ProjectsView::applyFilter() {
+    m_filteredProjects.clear();
 
-    for (const EntityData& entity : m_allEntities) {
-        if (matchesFilter(entity)) {
-            m_filteredEntities.append(entity);
+    for (const EntityData& project : m_allProjects) {
+        const ProjectMetaData& meta = m_projectMeta.value(project.id);
+        if (matchesFilter(project, meta)) {
+            m_filteredProjects.append(project);
         }
     }
 
     // Decide which empty state to show
-    bool noEntitiesAtAll = m_allEntities.isEmpty();
-    bool noFilteredResults = m_filteredEntities.isEmpty() && !noEntitiesAtAll;
-    showEmptyState(noEntitiesAtAll);
+    bool noProjectsAtAll = m_allProjects.isEmpty();
+    bool noFilteredResults = m_filteredProjects.isEmpty() && !noProjectsAtAll;
+    showEmptyState(noProjectsAtAll);
 
-    if (noFilteredResults && !noEntitiesAtAll) {
+    if (noFilteredResults && !noProjectsAtAll) {
         // Search returned no results — update empty state text
         m_emptyState->setTitle(QStringLiteral("No results found"));
         if (!m_currentFilter.search.isEmpty()) {
             m_emptyState->setDescription(
-                QStringLiteral("No courses or projects match \"%1\". Try a different search term.")
+                QStringLiteral("No projects match \"%1\". Try a different search term.")
                     .arg(m_currentFilter.search));
         } else {
             m_emptyState->setDescription(
-                QStringLiteral("No courses or projects match the current filters. Try adjusting them."));
+                QStringLiteral("No projects match the current filters. Try adjusting them."));
         }
         m_emptyState->setActionLabel(QString());  // hide action button for "no results"
         m_emptyState->setVisible(true);
         m_scrollArea->setVisible(false);
-        m_subtitleLabel->setVisible(false);
     }
 }
 
-bool CoursesView::matchesFilter(const EntityData& entity) const {
+bool ProjectsView::matchesFilter(const EntityData& project, const ProjectMetaData& meta) const {
     // Search: case-insensitive substring match on name
     if (!m_currentFilter.search.isEmpty()) {
-        if (!entity.name.contains(m_currentFilter.search, Qt::CaseInsensitive)) {
+        if (!project.name.contains(m_currentFilter.search, Qt::CaseInsensitive)) {
             return false;
         }
     }
 
-    // Category filter: categoryId == -1 means "all"
-    if (m_currentFilter.categoryId >= 0) {
-        if (entity.categoryId != m_currentFilter.categoryId) {
+    // Priority filter: "all" means any priority
+    if (m_currentFilter.priority != "all") {
+        if (meta.priority != m_currentFilter.priority) {
             return false;
         }
     }
 
     // Status filter: "all" means any status
     if (m_currentFilter.status != "all") {
-        if (entity.status != m_currentFilter.status) {
+        if (project.status != m_currentFilter.status) {
             return false;
         }
     }
@@ -226,16 +211,16 @@ bool CoursesView::matchesFilter(const EntityData& entity) const {
 
 // ── Grid layout ───────────────────────────────────────────────
 
-void CoursesView::rebuildGrid() {
+void ProjectsView::rebuildGrid() {
     // Remove old cards from the grid and delete them
-    for (EntityCard* card : m_cards) {
+    for (ProjectCard* card : m_cards) {
         m_gridLayout->removeWidget(card);
         card->deleteLater();
     }
     m_cards.clear();
 
     // If no filtered results, the empty state is already shown — skip grid
-    if (m_filteredEntities.isEmpty()) {
+    if (m_filteredProjects.isEmpty()) {
         return;
     }
 
@@ -243,42 +228,32 @@ void CoursesView::rebuildGrid() {
     m_scrollArea->setVisible(true);
     m_emptyState->setVisible(false);
 
-    // Build a lookup for categories (to set CategoryPill on each card)
-    // We use a map from categoryId → CategoryData for fast lookup.
-    QMap<int, CategoryData> catMap;
-    for (const CategoryData& cat : m_categories) {
-        catMap.insert(cat.id, cat);
-    }
-
-    // Create new EntityCard widgets and place them in the grid
+    // Create new ProjectCard widgets and place them in the grid
     int col = 0;
     int row = 0;
 
-    for (const EntityData& entity : m_filteredEntities) {
-        // Map the string type from EntityData to EntityCard::EntityType
-        EntityCard::EntityType cardType =
-            (entity.type == "Project")
-                ? EntityCard::EntityType::Project
-                : EntityCard::EntityType::Course;
+    for (const EntityData& project : m_filteredProjects) {
+        const ProjectMetaData& meta = m_projectMeta.value(project.id);
 
-        auto* card = new EntityCard(
-            entity.id,
-            entity.name,
-            cardType,
-            entity.overallProgress,
-            m_gridContainer);
+        auto* card = new ProjectCard(project.id, m_gridContainer);
+        
+        // Set basic project info
+        card->setName(project.name);
+        card->setDescription(meta.description);
+        card->setPriority(meta.priority);
+        card->setDeadline(meta.deadline);
+        card->setProgress(project.overallProgress);
+        card->setTeamSize(meta.team.size());
 
-        // Set category pill if entity has a category
-        if (entity.categoryId >= 0 && catMap.contains(entity.categoryId)) {
-            card->setCategory(catMap.value(entity.categoryId));
-        }
-
-        // Set status badge (shows "Paused" overlay when paused)
-        card->setStatus(entity.status);
+        // Calculate task count (sessions/tasks for this project)
+        // For now, we'll use a placeholder - this would need to be computed
+        // from the Units/SessionsTasks hierarchy
+        // TODO: Compute actual task counts from database
+        card->setTaskCount(0, 0);
 
         // Wire click signal
-        connect(card, &EntityCard::clicked,
-                this, &CoursesView::onCardClicked);
+        connect(card, &ProjectCard::clicked,
+                this, &ProjectsView::onCardClicked);
 
         m_gridLayout->addWidget(card, row, col);
         m_cards.append(card);
@@ -291,11 +266,11 @@ void CoursesView::rebuildGrid() {
     }
 }
 
-void CoursesView::updateColumnCount() {
+void ProjectsView::updateColumnCount() {
     // Compute available width for the grid (scroll area viewport width)
     int availableWidth = m_scrollArea->viewport() ? m_scrollArea->viewport()->width() : width();
 
-    // EntityCard is 160 px wide + 24 px spacing between columns
+    // ProjectCard is similar to EntityCard: ~160 px wide + 24 px spacing between columns
     // Breakpoints chosen so cards don't feel cramped:
     //   1 col: <  500 px
     //   2 col: <  700 px
@@ -316,23 +291,21 @@ void CoursesView::updateColumnCount() {
     }
 }
 
-void CoursesView::showEmptyState(bool noEntitiesAtAll) {
-    if (noEntitiesAtAll) {
-        // No entities in the DB at all — show the "add first" empty state
-        m_emptyState->setTitle(QStringLiteral("No courses or projects yet"));
+void ProjectsView::showEmptyState(bool noProjectsAtAll) {
+    if (noProjectsAtAll) {
+        // No projects in the DB at all — show the "add first" empty state
+        m_emptyState->setTitle(QStringLiteral("No projects yet"));
         m_emptyState->setDescription(
-            QStringLiteral("Get started by adding your first course or project to begin tracking your progress."));
-        m_emptyState->setActionLabel(QStringLiteral("Add Your First Item"));
+            QStringLiteral("Get started by adding your first project to begin tracking your work."));
+        m_emptyState->setActionLabel(QStringLiteral("Add Your First Project"));
         m_emptyState->setVisible(true);
         m_scrollArea->setVisible(false);
-        m_subtitleLabel->setVisible(false);
-    } else if (m_filteredEntities.isEmpty()) {
-        // Has entities but filter yields nothing — handled in applyFilter()
+    } else if (m_filteredProjects.isEmpty()) {
+        // Has projects but filter yields nothing — handled in applyFilter()
         // (the description is set there based on the active filter)
     } else {
         // Normal state: has filtered results, show the grid
         m_emptyState->setVisible(false);
         m_scrollArea->setVisible(true);
-        m_subtitleLabel->setVisible(true);
     }
 }

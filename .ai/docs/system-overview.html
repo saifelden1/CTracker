@@ -205,7 +205,7 @@
   <h1>CTracker — System Overview</h1>
   <p>
     A plain-English tour of what the app is, what's already built, and
-    how the pieces fit together. Current state: Phases 0&nbsp;–&nbsp;4 complete.
+    how the pieces fit together. Current state: Phases 0&nbsp;–&nbsp;6 complete, Phase&nbsp;7 partial (CoursesView built).
     <span class="tag built">Built</span>
     <span class="tag partial">Partial / older slice only</span>
     <span class="tag scheduled">Coming later</span>
@@ -286,10 +286,12 @@
     <strong>older slice</strong>: a sidebar, a home page listing your
     courses and projects, a detail page for each one (with the progress
     slider that updates the heatmap), an analytics page with the heatmap,
-    and a minimal settings page (just import / export). Categories,
-    Todos, Pomodoro, Calendar — the <em>tables and database functions</em>
-    are ready, but the buttons and pages to use them are still coming
-    in Phases 5 – 9.
+    and a minimal settings page (just import / export). In addition,
+    <strong>CoursesView</strong> (Task 7.3) is now built — a responsive
+    grid of course/project cards with a filter bar and empty-state placeholder.
+    The remaining pages (ProjectsView, TodoView, PomodoroView, updated
+    HomeDashboard, updated AnalyticsView, updated SettingsView) are still
+    coming in Phase 7.
   </p>
 </section>
 
@@ -336,7 +338,7 @@ flowchart TB
       EDV["EntityDetailView ✓<br/>(used by both Course & Project)"]
       AV["AnalyticsView ✓"]
       SV["SettingsView (minimal)"]
-      CV["CoursesView (Phase 7.3)"]
+      CV["CoursesView ✓<br/>(Task 7.3 — responsive grid + filter)"]
       PV["ProjectsView (Phase 7.4)"]
       TV["TodoView (Phase 7.7)"]
       PMV["PomodoroView (Phase 7.8)"]
@@ -344,26 +346,29 @@ flowchart TB
 
     subgraph WIDGETS["Custom widgets"]
       direction LR
-      EC["EntityCard ✓"]
+      EC["EntityCard ✓<br/>(v2: CategoryPill + Paused badge)"]
       UEW["UnitExpandableWidget ✓"]
       STR["SessionTaskRow ✓"]
       CPB["CircularProgressBar ✓"]
       CH["ContributionHeatmap ✓"]
-      SC["StatsCard (6.6)"]
-      CP["CategoryPill (6.7)"]
-      CAL["CalendarWidget (6.8)"]
-      DDP["DayDetailsPanel (6.9)"]
-      TR["TodoRow (6.10)"]
-      PTW["PomodoroTimerWidget (6.11)"]
+      SC["StatsCard ✓"]
+      CP["CategoryPill ✓"]
+      CAL["CalendarWidget ✓"]
+      DDP["DayDetailsPanel ✓"]
+      TR["TodoRow ✓"]
+      PTW["PomodoroTimerWidget ✓"]
+      PC["ProjectCard ✓"]
+      CFB["CoursesFilterBar ✓"]
+      ES["EmptyState ✓<br/>(shared placeholder)"]
     end
 
     subgraph MODELS["Models"]
       direction LR
       ALM["ActivityLogModel ✓"]
-      CAT["CategoryModel (5.4)"]
-      TM["TodoModel (5.5)"]
-      HA["HeatmapAggregator (5.6)"]
-      AS["AnalyticsSummary fn (5.7)"]
+      CAT["CategoryModel ✓"]
+      TM["TodoModel ✓"]
+      HA["HeatmapAggregator ✓"]
+      AS["AnalyticsSummary ✓<br/>(stub)"]
     end
 
     subgraph CORE["Data layer (core/)"]
@@ -390,9 +395,10 @@ flowchart TB
     classDef partial   fill:#f59e0b,stroke:#d97706,color:#0a0e13;
     classDef scheduled fill:#404854,stroke:#2d323d,color:#9ca3af;
 
-    class MW,SN,DM,DS,DI,DE,HD,EDV,AV,EC,UEW,STR,CPB,CH,ALM built
+    class MW,SN,DM,DS,DI,DE,HD,EDV,AV,EC,UEW,STR,CPB,CH,ALM,SC,CP,CAL,DDP,TR,PTW,PC,CFB,ES,CAT,TM,HA built
+    class CV built
     class SV partial
-    class CV,PV,TV,PMV,SC,CP,CAL,DDP,TR,PTW,CAT,TM,HA,AS scheduled
+    class PV,TV,PMV scheduled
 </pre>
     <div class="caption">
       <strong>Reading this diagram:</strong> The app is built in
@@ -682,7 +688,8 @@ sequenceDiagram
   <p>
     The main window holds a stack of "pages" — only one is visible at
     a time, like a deck of cards where you flip to whichever page the
-    user picked. Today there are 5 pages; by Phase 7 there will be 9.
+    user picked. Today there are 5 pages (with CoursesView added as
+    Task 7.3); by the end of Phase 7 there will be 9.
     Arrows in the diagram show how you get from one page to another.
   </p>
 
@@ -692,17 +699,20 @@ stateDiagram-v2
     [*] --> Home
 
     state "Home (HomeDashboard)" as Home
+    state "Courses (CoursesView)" as CL
     state "CourseDetail (EntityDetailView)" as CD
     state "ProjectDetail (EntityDetailView)" as PD
     state "Analytics (AnalyticsView)" as AN
     state "Settings (SettingsView)" as ST
 
-    Home --> CD : EntityCard click<br/>(courseSelected)
-    Home --> PD : EntityCard click<br/>(projectSelected)
-    Home --> AN : sidebar → Analytics
-    Home --> ST : sidebar → Settings
+    Home --> CL  : sidebar → Courses
+    CL   --> CD  : courseSelected signal
+    Home --> PD  : EntityCard click<br/>(projectSelected)
+    Home --> AN  : sidebar → Analytics
+    Home --> ST  : sidebar → Settings
 
-    CD   --> Home : back button
+    CD   --> CL  : back button
+    CL   --> Home : sidebar → Home
     PD   --> Home : back button
 
     AN   --> Home : sidebar → Home
@@ -712,10 +722,13 @@ stateDiagram-v2
     PD   --> PD  : sidebar → Projects (if a project is loaded)
 </pre>
     <div class="caption">
-      Right now the sidebar's <em>Courses</em> and <em>Projects</em>
-      buttons re-open the last one you were looking at (or send you back
-      to Home if you haven't opened anything yet). Later, those buttons
-      will open proper grid-of-cards list pages (Phase 7).
+      <strong>CoursesView</strong> (Task 7.3) is now built — the sidebar's
+      <em>Courses</em> button opens a responsive grid of course/project cards
+      with a filter bar and empty-state placeholder. Clicking a course card
+      opens the detail view; the back button returns to the list.
+      The <em>Projects</em> button still re-opens the last detail view
+      (ProjectsView, Task 7.4, is pending). The remaining pages
+      (TodoView, PomodoroView) will be added in Phase 7.
     </div>
   </div>
 </section>
@@ -823,6 +836,106 @@ classDiagram
     }
     ContributionHeatmap --|> QWidget
 
+    class StatsCard {
+        +setValue(QString)
+        +setSubtitle(QString)
+        +setBadgeText(QString)
+        +setIcon(QString)
+    }
+    StatsCard --|> QFrame
+
+    class CategoryPill {
+        +setCategory(CategoryData)
+        +clearCategory()
+    }
+    CategoryPill --|> QWidget
+
+    class CalendarWidget {
+        +setSelectedDate(QDate)
+        +setIndicatorDates(QList~QDate~)
+        ~dateSelected(QDate)
+    }
+    CalendarWidget --|> QWidget
+
+    class DayDetailsPanel {
+        +setDate(QDate)
+        +setData(CalendarDayData)
+        ~todoAdded(QString)
+        ~todoToggled(int)
+        ~notesChanged(QString)
+        ~closed()
+    }
+    DayDetailsPanel --|> QWidget
+
+    class TodoRow {
+        +setTodoData(TodoData)
+        +setCompleted(bool)
+        ~toggled(int,bool)
+        ~deleteRequested(int)
+    }
+    TodoRow --|> QWidget
+
+    class PomodoroTimerWidget {
+        +startTimer()
+        +pauseTimer()
+        +resetTimer()
+        +mode() Mode
+        +state() State
+        ~timerCompleted()
+    }
+    PomodoroTimerWidget --|> QWidget
+
+    class ProjectCard {
+        +setProjectData(ProjectMetaData)
+        +setProgress(int)
+        ~clicked(int)
+    }
+    ProjectCard --|> QWidget
+
+    class CoursesFilterBar {
+        +setCategories(QList~CategoryData~)
+        ~filterChanged(CourseFilter)
+        ~addNewRequested()
+    }
+    CoursesFilterBar --|> QWidget
+
+    class EmptyState {
+        +setIcon(QString)
+        +setTitle(QString)
+        +setDescription(QString)
+        +setActionText(QString)
+        ~actionRequested()
+    }
+    EmptyState --|> QWidget
+
+    class CoursesView {
+        +refreshCards()
+        +applyFilter(CourseFilter)
+        ~courseSelected(int)
+        ~projectSelected(int)
+        ~addNewRequested()
+    }
+    CoursesView --|> QWidget
+
+    class CategoryModel {
+        +refresh()
+        +data(index,role) QVariant
+    }
+    CategoryModel --|> QAbstractListModel
+
+    class TodoModel {
+        +activeCount() int
+        +completedCount() int
+        ~activeCountChanged(int)
+        ~completedCountChanged(int)
+    }
+    TodoModel --|> QObject
+
+    class HeatmapAggregator {
+        +aggregate(mode) QMap
+    }
+    HeatmapAggregator --|> QObject
+
     class AnalyticsView {
         +loadYear(int)
         +onDataChanged()
@@ -877,14 +990,29 @@ classDiagram
     EntityDetailView      o-- UnitExpandableWidget
     UnitExpandableWidget  o-- SessionTaskRow
     EntityCard            *-- CircularProgressBar
+    EntityCard            o-- CategoryPill
     AnalyticsView         o-- ContributionHeatmap
     AnalyticsView         o-- ActivityLogModel
     SettingsView          *-- DataImporter
     SettingsView          *-- DataExporter
+    CoursesView           *-- CoursesFilterBar
+    CoursesView           o-- EntityCard
+    CoursesView           o-- ProjectCard
+    CoursesView           o-- EmptyState
+    PomodoroTimerWidget   *-- CircularProgressBar
 </pre>
     <div class="caption">
+      <strong>New classes added in Phases 5–6 and Task 7.3:</strong>
+      <code>StatsCard</code>, <code>CategoryPill</code>,
+      <code>CalendarWidget</code>, <code>DayDetailsPanel</code>,
+      <code>TodoRow</code>, <code>PomodoroTimerWidget</code>,
+      <code>ProjectCard</code>, <code>CoursesFilterBar</code>,
+      <code>EmptyState</code>, <code>CoursesView</code>,
+      <code>CategoryModel</code>, <code>TodoModel</code>,
+      <code>HeatmapAggregator</code>.
+      <br><br>
       Today, <code>CourseDetailView</code> and
-      <code>ProjectDetailView</code> are just two names for the same
+      <code>ProjectDetailView</code> are still just two names for the same
       underlying screen (<code>EntityDetailView</code>). Later (Phase
       7.5 and 7.6) they'll become two proper screens with their own
       bits — for example, the project version will have a deadline
@@ -917,7 +1045,7 @@ classDiagram
       <tr><td><code>ContributionHeatmap</code></td><td><code>analytics/</code></td><td><span class="tag built">Built</span></td><td>6.2</td><td>53×7 grid, hover tooltip, year nav</td></tr>
       <tr><td><code>SessionTaskRow</code></td><td><code>courses/</code></td><td><span class="tag built">Built</span></td><td>6.3</td><td>QSlider + name (now registered with CMake — Phase 0 fix)</td></tr>
       <tr><td><code>UnitExpandableWidget</code></td><td><code>courses/</code></td><td><span class="tag built">Built</span></td><td>6.4</td><td>Collapsible unit with sessions, mean-progress computer</td></tr>
-      <tr><td><code>EntityCard</code></td><td><code>courses/</code></td><td><span class="tag partial">Partial</span></td><td>6.5</td><td>v1 surface only. Pending: CategoryPill slot, Paused badge</td></tr>
+      <tr><td><code>EntityCard</code></td><td><code>courses/</code></td><td><span class="tag built">Built</span></td><td>6.5</td><td>v2 additions complete: CategoryPill slot + Paused status badge</td></tr>
       <tr><td><code>MainWindow</code></td><td><code>shared/</code></td><td><span class="tag partial">Partial</span></td><td>7.12</td><td>5-page stack today; Phase 7 grows it to 9</td></tr>
       <tr><td><code>SideNavigationBar</code></td><td><code>shared/</code></td><td><span class="tag partial">Partial</span></td><td>7.1</td><td>5 buttons today (Home/Courses/Projects/Analytics/Settings); To-Do + Pomodoro pending</td></tr>
       <tr><td><code>HomeDashboard</code></td><td><code>shared/</code></td><td><span class="tag partial">Partial</span></td><td>7.2</td><td>Card grid today; v2 adds StatsCard row + calendar + heatmap pane</td></tr>
@@ -925,19 +1053,23 @@ classDiagram
       <tr><td><code>AnalyticsView</code></td><td><code>analytics/</code></td><td><span class="tag partial">Partial</span></td><td>7.9</td><td>Heatmap + year nav today; charts (line/bar/pie) Phase 7.9</td></tr>
       <tr><td><code>SettingsView</code></td><td><code>settings/</code></td><td><span class="tag partial">Partial</span></td><td>7.11</td><td>Import / Export only. Profile / Preferences / Categories / About pending</td></tr>
       <tr><td><code>ActivityLogModel</code></td><td><code>analytics/</code></td><td><span class="tag built">Built</span></td><td>5.1</td><td>QAbstractTableModel, daily-totals aggregator</td></tr>
-      <tr><td><code>CategoryModel</code></td><td><code>shared/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>5.4</td><td>—</td></tr>
-      <tr><td><code>TodoModel</code></td><td><code>todos/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>5.5</td><td>—</td></tr>
-      <tr><td><code>HeatmapAggregator</code></td><td><code>analytics/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>5.6</td><td>—</td></tr>
-      <tr><td><code>StatsCard</code></td><td><code>shared/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>6.6</td><td>—</td></tr>
-      <tr><td><code>CategoryPill</code></td><td><code>shared/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>6.7</td><td>—</td></tr>
-      <tr><td><code>CalendarWidget</code></td><td><code>calendar/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>6.8</td><td>—</td></tr>
-      <tr><td><code>DayDetailsPanel</code></td><td><code>calendar/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>6.9</td><td>—</td></tr>
-      <tr><td><code>TodoRow</code></td><td><code>todos/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>6.10</td><td>—</td></tr>
-      <tr><td><code>PomodoroTimerWidget</code></td><td><code>pomodoro/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>6.11</td><td>—</td></tr>
-      <tr><td><code>ProjectCard</code></td><td><code>projects/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>6.12</td><td>—</td></tr>
-      <tr><td><code>CoursesFilterBar</code></td><td><code>courses/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>6.13</td><td>—</td></tr>
-      <tr><td><code>CoursesView / ProjectsView</code></td><td><code>courses,projects/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>7.3–7.4</td><td>Card grids with filter bars</td></tr>
-      <tr><td><code>TodoView / PomodoroView</code></td><td><code>todos,pomodoro/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>7.7–7.8</td><td>—</td></tr>
+      <tr><td><code>CategoryModel</code></td><td><code>shared/</code></td><td><span class="tag built">Built</span></td><td>5.4</td><td>QAbstractListModel exposing id/name/color/entityCount via custom roles</td></tr>
+      <tr><td><code>TodoModel</code></td><td><code>todos/</code></td><td><span class="tag built">Built</span></td><td>5.5</td><td>Two QSortFilterProxyModels (active vs completed) + count signals</td></tr>
+      <tr><td><code>HeatmapAggregator</code></td><td><code>analytics/</code></td><td><span class="tag built">Built</span></td><td>5.6</td><td>RecentBuckets (0/1/2-3/4-6/7+) + NormalizedRange (floor((count/max)*4)) modes</td></tr>
+      <tr><td><code>AnalyticsSummary</code></td><td><code>analytics/</code></td><td><span class="tag partial">Partial</span></td><td>5.7</td><td>Stub compute() method — returns empty struct. Full implementation in Phase 7.9</td></tr>
+      <tr><td><code>StatsCard</code></td><td><code>shared/</code></td><td><span class="tag built">Built</span></td><td>6.6</td><td>Icon + title + large value + subtitle + optional badge; hover via setProperty + unpolish/polish</td></tr>
+      <tr><td><code>CategoryPill</code></td><td><code>shared/</code></td><td><span class="tag built">Built</span></td><td>6.7</td><td>8px colored dot + name; background = category color at 15% alpha; starts hidden</td></tr>
+      <tr><td><code>CalendarWidget</code></td><td><code>calendar/</code></td><td><span class="tag built">Built</span></td><td>6.8</td><td>Custom-painted month grid (NOT QCalendarWidget); indicator dots; keyboard arrow nav</td></tr>
+      <tr><td><code>DayDetailsPanel</code></td><td><code>calendar/</code></td><td><span class="tag built">Built</span></td><td>6.9</td><td>Three sections: To Do (list + add), Completed (strikethrough), Notes (QTextEdit)</td></tr>
+      <tr><td><code>TodoRow</code></td><td><code>todos/</code></td><td><span class="tag built">Built</span></td><td>6.10</td><td>Checkbox + title + priority badge (15% alpha bg) + delete button; completed = muted + italic</td></tr>
+      <tr><td><code>PomodoroTimerWidget</code></td><td><code>pomodoro/</code></td><td><span class="tag built">Built</span></td><td>6.11</td><td>Embeds CircularProgressBar (256px); 1Hz QTimer; auto-switches Work/Break; persists state to DB</td></tr>
+      <tr><td><code>ProjectCard</code></td><td><code>projects/</code></td><td><span class="tag built">Built</span></td><td>6.12</td><td>Name + description (2-line) + priority badge + deadline badge (days-left color coding) + progress bar</td></tr>
+      <tr><td><code>CoursesFilterBar</code></td><td><code>courses/</code></td><td><span class="tag built">Built</span></td><td>6.13</td><td>Search QLineEdit + filter toggle + "Add New"; collapsible category/status dropdowns; 200ms debounce</td></tr>
+      <tr><td><code>EmptyState</code></td><td><code>shared/</code></td><td><span class="tag built">Built</span></td><td>new</td><td>Shared placeholder: 64×64 icon circle + title + description + optional action button</td></tr>
+      <tr><td><code>CoursesView</code></td><td><code>courses/</code></td><td><span class="tag built">Built</span></td><td>7.3</td><td>Responsive grid (1–4 cols by breakpoint) + CoursesFilterBar + EmptyState; subscribes to dataChanged</td></tr>
+      <tr><td><code>ProjectsView</code></td><td><code>projects/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>7.4</td><td>Card grid with filter bar</td></tr>
+      <tr><td><code>TodoView</code></td><td><code>todos/</code></td><td><span class="tag built">Built</span></td><td>7.7</td><td>Header with active/completed counts; add-task input; two sections of TodoRow widgets</td></tr>
+      <tr><td><code>PomodoroView</code></td><td><code>pomodoro/</code></td><td><span class="tag scheduled">Scheduled</span></td><td>7.8</td><td>—</td></tr>
     </tbody>
   </table>
 </section>
@@ -946,17 +1078,15 @@ classDiagram
 <section id="what-next">
   <h2>What's next</h2>
   <p>
-    Phase 4 just landed — the database now has every read/write
-    function the future UI needs. Next on the list is <strong>Phase
-    5.4 — CategoryModel</strong>, the first of four little "model"
-    classes that act as glue between the database functions and the
-    list/grid widgets in Qt.
+    Phases 5 and 6 are now complete — every model class and every custom
+    widget the views need is built. CoursesView (Task 7.3) is also done.
+    Next on the list is <strong>Task 7.1 — SideNavigationBar</strong>
+    (adding To-Do and Pomodoro buttons), then the remaining Phase 7
+    screens.
   </p>
 
   <ol>
-    <li><strong>Phase 5.4–5.7</strong> — four small "model" classes (CategoryModel, TodoModel, HeatmapAggregator, AnalyticsSummary) that feed prepared data into the views.</li>
-    <li><strong>Phase 6 (rest)</strong> — every remaining custom widget: stat cards, category pills, the calendar grid, the to-do row, the pomodoro timer ring, the project card, the courses filter bar.</li>
-    <li><strong>Phase 7</strong> — every screen built once in its final form: Courses, Projects, To-Do, Pomodoro, Course detail, Project detail, Analytics, Settings, Home dashboard.</li>
+    <li><strong>Phase 7 (remaining)</strong> — SideNavigationBar v2 (2 more buttons), HomeDashboard v2 (StatsCard row + calendar + heatmap), ProjectsView, CourseDetailView v2, ProjectDetailView v2, PomodoroView, AnalyticsView v2 (charts), EntityCreateDialog, SettingsView v2, MainWindow v2 (9-page stack).</li>
     <li><strong>Phase 8</strong> — applying the dark theme stylesheet everywhere, adding Lucide-style SVG icons, hooking up Qt's chart library, and wiring up nice error messages.</li>
     <li><strong>Phase 9</strong> — automated tests that run on every build.</li>
   </ol>
