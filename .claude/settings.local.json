@@ -12,7 +12,18 @@
       "Bash(cmake -S . -B build -G \"Ninja\")",
       "Bash(cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=C:/Qt/6.7.2/mingw_64 -DCMAKE_BUILD_TYPE=Debug)",
       "Bash(cmake --build build)",
-      "Bash(cmake -S . -B build -G \"Ninja\" -DCMAKE_PREFIX_PATH=\"C:/Qt/6.7.2/mingw_64\" -DCMAKE_BUILD_TYPE=Debug)"
+      "Bash(cmake -S . -B build -G \"Ninja\" -DCMAKE_PREFIX_PATH=\"C:/Qt/6.7.2/mingw_64\" -DCMAKE_BUILD_TYPE=Debug)",
+      "Bash(./CTracker.exe)",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(QT_DEBUG_PLUGINS=1 ./CTracker.exe)",
+      "Bash(echo \"EXIT=$?\")",
+      "Read(//c/Users/01226/AppData/Roaming/CTracker/CTracker/**)",
+      "Read(//c/Users/01226/AppData/Local/CTracker/**)",
+      "Bash(cmake --build build --target CTracker)",
+      "Bash(rm -f ctracker-debug.log)",
+      "Bash(cat ctracker-debug.log)",
+      "Bash(rm -f ctracker-debug.log run.log)",
+      "Bash(cmake -B build -S .)"
     ]
   }
 }

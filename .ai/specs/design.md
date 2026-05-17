@@ -299,6 +299,23 @@ SessionTaskRow: slider released
 | Progress update failure | Revert slider, show notification |
 | Widget render failure | Catch exception, render placeholder |
 
+## Static-Init Safety Rule (Qt6 + MinGW, Windows)
+
+**Never construct Qt objects from string literals at file/namespace scope.**
+
+File-scope `static const QColor k{"#10b981"};` (and the same shape for `QFont`, `QIcon`, `QRegularExpression`) runs during pre-`main` dynamic initialization, before `QApplication` exists and before QtGui's color-name machinery is reachable. On Windows + MinGW this corrupts the C runtime heap and the process exits with `STATUS_HEAP_CORRUPTION` (`0xC0000374`, observed exit code `-1073740940`) before `main()`'s first instruction runs — so even early `qDebug` lines never appear.
+
+**Rule for all palette/theme constants in `.cpp` files:**
+```cpp
+// ✗ Unsafe — string-hex ctor touches QtGui internals.
+static const QColor kPrimary { "#10b981" };
+
+// ✓ Safe — numeric ctor only touches QColor's own members.
+static const QColor kPrimary (0x10, 0xb9, 0x81);
+```
+
+If a string-form `QColor`/`QFont` really is needed, put it inside a function as a `static` local — its construction is then deferred to first use, after Qt is initialized. This rule was added after a Phase 7→8 startup crash traced to `CalendarWidget.cpp`, `TodoRow.cpp`, and `ProjectCard.cpp` (fix: numeric-RGB constructors).
+
 ## Testing Strategy
 
 1. **Unit Tests**: DatabaseManager CRUD, progress calculations, filter logic

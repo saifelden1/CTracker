@@ -345,50 +345,52 @@ otifications.enabled=1\, \sound.enabled=1\, \courses.autoPauseDays=30\
 - [x] Two sections (Active / Completed) of `TodoRow`s
 - [x] Within each section: priority high → medium → low
 
-### Task 7.8: PomodoroView (`pomodoro/`)
-- [ ] Two-column layout
-- [ ] **Left:** mode toggle (Work / Break) + `PomodoroTimerWidget` + Settings card (course dropdown, work duration {15/20/25/30/45/50}, break duration {5/10/15})
-- [ ] **Right:** Today's Progress card (sessions + minutes from `totalMinutesOn(today)`) + Recent Sessions card (last 5)
-- [ ] On `completed(Work)` → `insertPomodoroSession` + auto-switch + reset (handled inside the widget; view persists the session row)
-- [ ] Settings widgets disabled while timer is running
-- [ ] On view construct, restore `PomodoroTimerState` from DB so cross-navigation/cross-launch resume works
+### Task 7.8: PomodoroView (`pomodoro/`) — DONE
+- [x] Two-column layout
+- [x] **Left:** mode toggle (Work / Break) + `PomodoroTimerWidget` + Settings card (course dropdown, work duration {15/20/25/30/45/50}, break duration {5/10/15})
+- [x] **Right:** Today's Progress card (sessions + minutes from `totalMinutesOn(today)`) + Recent Sessions card (last 5)
+- [x] On `completed(Work)` → `insertPomodoroSession` + auto-switch + reset (handled inside the widget; view persists the session row)
+- [x] Settings widgets disabled while timer is running
+- [x] On view construct, restore `PomodoroTimerState` from DB so cross-navigation/cross-launch resume works
 
-### Task 7.9: AnalyticsView (`analytics/`) — final v2 form (no v1 throwaway)
-- [ ] Top row: 4 × `StatsCard` (Day Streak, Total Hours, Avg Sessions/Day, Week Comparison)
-- [ ] 5 chart widgets via `QChartView`:
+### Task 7.9: AnalyticsView (`analytics/`) — final v2 form — DONE
+- [x] Top row: 4 × `StatsCard` (Day Streak, Total Hours, Avg Sessions/Day, Week Comparison)
+- [x] 5 chart widgets via `QChartView`:
   - Progress over time (`QLineSeries`, 8 weeks)
   - Study hours/week (`QBarSeries`, 8 weeks)
   - Course progress breakdown (custom horizontal-bar list using `CategoryData::color`)
   - Time distribution (`QPieSeries` over Pomodoro minutes per course)
   - Weekly activity pattern (`QBarSeries`, Mon-Sun)
-- [ ] Dark-themed `QChart` palette, custom tooltips, `NoRubberBand`, antialiased
-- [ ] `ContributionHeatmap` repositioned below charts in `NormalizedRange` mode, configurable year nav
+- [x] Dark-themed `QChart` palette, custom tooltips, `NoRubberBand`, antialiased
+- [x] `ContributionHeatmap` repositioned below charts in `NormalizedRange` mode, configurable year nav
 
-### Task 7.10: EntityCreateDialog (`shared/`)
-- [ ] Modes: Course-or-Project (from `CoursesView`) vs. Project-only (from `ProjectsView`)
-- [ ] Validates Name not empty/whitespace → enables OK
-- [ ] On accept, calls `addCourse`/`addProject` and (for projects) `upsertProjectMeta` with description/priority/deadline
+### Task 7.10: EntityCreateDialog (`shared/`) — DONE
+- [x] Modes: Course-or-Project (from `CoursesView`) vs. Project-only (from `ProjectsView`)
+- [x] Validates Name not empty/whitespace → enables OK
+- [x] On accept, calls `addCourse`/`addProject` and (for projects) `upsertProjectMeta` with description/priority/deadline
 
-### Task 7.11: SettingsView (`settings/`)
-- [ ] Replace the minimal v1 view with 5 cards: Profile, Preferences, Categories, Data Management, About
-- [ ] **Profile:** Name, Email, Study Goals — bound via `getProfile/setProfile`
-- [ ] **Preferences:** pomodoro durations, notifications, sound, autoPauseDays — via `getPreferences/setPreferences`
-- [ ] **Categories:** list with edit/add + color picker dialog; uses `CategoryModel`
-- [ ] **Data Management:** Export, Import, Clear All Data (destructive red, confirmation dialog)
-- [ ] **About:** version, build, license
+### Task 7.11: SettingsView (`settings/`) — DONE
+- [x] Replace the minimal v1 view with 5 cards: Profile, Preferences, Categories, Data Management, About
+- [x] **Profile:** Name, Email, Study Goals — bound via `getProfile/setProfile`
+- [x] **Preferences:** pomodoro durations, notifications, sound, autoPauseDays — via `getPreferences/setPreferences`
+- [x] **Categories:** list with edit/add + color picker dialog; uses `CategoryModel`
+- [x] **Data Management:** Export, Import, Clear All Data (destructive red, confirmation dialog)
+- [x] **About:** version, build, license
 
 ### Task 7.12: MainWindow (`shared/`)
-- [ ] `QStackedWidget` with all 7 pages in order: Home (0), Courses (1), Projects (2), To-Do (3), Pomodoro (4), Analytics (5), Settings (6)
-- [ ] Plus 2 hidden detail pages (CourseDetail, ProjectDetail) reached via card clicks
-- [ ] Wire `SideNavigationBar::navigationRequested` → `setCurrentIndex`
-- [ ] Wire `HomeDashboard::courseSelected` → `CourseDetailView::loadCourse` → switch view
-- [ ] Same for `projectSelected`
-- [ ] `loadStyleSheet(":/styles/dark-industrial.qss")`
-- [ ] Min size 1280×800; persist geometry via `QSettings`
+- [x] `QStackedWidget` with all 7 pages in order: Home (0), Courses (1), Projects (2), To-Do (3), Pomodoro (4), Analytics (5), Settings (6)
+- [x] Plus 2 hidden detail pages (CourseDetail, ProjectDetail) reached via card clicks
+- [x] Wire `SideNavigationBar::navigationRequested` → `setCurrentIndex`
+- [x] Wire `HomeDashboard::courseSelected` → `CourseDetailView::loadCourse` → switch view
+- [x] Same for `projectSelected`
+- [x] `loadStyleSheet(":/styles/dark-industrial.qss")`
+- [x] Min size 1280×800; persist geometry via `QSettings`
 
 ---
 
 ## Phase 8: Styling, Assets & Application Wiring
+
+> **Pre-flight (resolved):** Startup heap-corruption crash (exit `-1073740940` / `0xC0000374`) traced to file-scope `static const QColor k{"#hex"}` in `calendar/CalendarWidget.cpp`, `todos/TodoRow.cpp`, `projects/ProjectCard.cpp`. String-hex `QColor` ctor at static-init runs before `QApplication` and corrupts the heap on Windows/MinGW. Replaced with numeric-RGB ctors (`QColor(0x10, 0xb9, 0x81)`). Rule recorded in `design.md` → "Static-Init Safety Rule". App now launches cleanly; Phase 8 work (QSS theme, fonts, icons, error wiring) is unblocked.
 
 ### Task 8.1: Base theme (`assets/styles/dark-industrial.qss`)
 - [ ] Apply canonical palette tokens (matching CLAUDE.md §5 and Req 15.5):
