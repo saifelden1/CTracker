@@ -102,6 +102,27 @@ void DatabaseManager::close()
     }
 }
 
+void DatabaseManager::beginBatchUpdate() {
+    m_batchUpdateMode = true;
+    m_pendingDataChanged = false;
+}
+
+void DatabaseManager::endBatchUpdate() {
+    m_batchUpdateMode = false;
+    if (m_pendingDataChanged) {
+        m_pendingDataChanged = false;
+        emitDataChanged();
+    }
+}
+
+void DatabaseManager::emitDataChanged() {
+    if (m_batchUpdateMode) {
+        m_pendingDataChanged = true;
+    } else {
+        emit dataChanged();
+    }
+}
+
 // ============================================================
 //  createTables()
 //
@@ -358,7 +379,7 @@ int DatabaseManager::addEntity(const QString& name, const QString& type)
 
     int newId = rows.first()["id"].toInt();
     qDebug() << "[DB] Added" << type << "'" << name << "' with ID" << newId;
-    emit dataChanged();
+    emitDataChanged();
     return newId;
 }
 
@@ -377,14 +398,14 @@ bool DatabaseManager::removeCourse(int id)  {
     }
     bool ok = executeQuery("DELETE FROM CoursesProjects WHERE ID = :id AND Type = 'Course'",
                            {{":id", id}});
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
 bool DatabaseManager::removeProject(int id) {
     bool ok = executeQuery("DELETE FROM CoursesProjects WHERE ID = :id AND Type = 'Project'",
                            {{":id", id}});
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -393,7 +414,7 @@ bool DatabaseManager::renameEntity(int entityId, const QString& type, const QStr
         "UPDATE CoursesProjects SET Name = :name, UpdatedAt = CURRENT_TIMESTAMP WHERE ID = :id AND Type = :type",
         {{":name", newName}, {":id", entityId}, {":type", type}}
     );
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -495,13 +516,13 @@ int DatabaseManager::addUnit(int parentId, const QString& name) {
     if (rows.isEmpty()) return -1;
     int newId = rows.first()["id"].toInt();
     qDebug() << "[DB] Added Unit '" << name << "' under parent" << parentId;
-    emit dataChanged();
+    emitDataChanged();
     return newId;
 }
 
 bool DatabaseManager::removeUnit(int unitId) {
     bool ok = executeQuery("DELETE FROM Units WHERE ID = :id", {{":id", unitId}});
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -510,7 +531,7 @@ bool DatabaseManager::renameUnit(int unitId, const QString& newName) {
         "UPDATE Units SET Name = :name WHERE ID = :id",
         {{":name", newName}, {":id", unitId}}
     );
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -545,13 +566,13 @@ int DatabaseManager::addSessionTask(int unitId, const QString& name, int progres
     if (rows.isEmpty()) return -1;
     int newId = rows.first()["id"].toInt();
     qDebug() << "[DB] Added Session/Task '" << name << "' under unit" << unitId;
-    emit dataChanged();
+    emitDataChanged();
     return newId;
 }
 
 bool DatabaseManager::removeSessionTask(int sessionId) {
     bool ok = executeQuery("DELETE FROM SessionsTasks WHERE ID = :id", {{":id", sessionId}});
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -560,7 +581,7 @@ bool DatabaseManager::renameSessionTask(int sessionId, const QString& newName) {
         "UPDATE SessionsTasks SET Name = :name WHERE ID = :id",
         {{":name", newName}, {":id", sessionId}}
     );
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -605,7 +626,7 @@ bool DatabaseManager::updateSessionTaskProgress(int sessionId, int progress) {
     logActivity(sessionId, oldValue, progress, entityType);
 
     commitTransaction();
-    emit dataChanged();
+    emitDataChanged();
     return true;
 }
 
@@ -728,7 +749,7 @@ bool DatabaseManager::seedDefaults()
 //  Every method below sits on top of the v2 schema built in
 //  Phase 2 and the v2 structs added in Phase 3. They are the
 //  only entry point future widgets/views use to talk to the DB.
-//  Reads never emit; writes emit dataChanged() on success so
+//  Reads never emit; writes emitDataChanged() on success so
 //  subscribed views can refresh themselves.
 // ============================================================
 
@@ -805,7 +826,7 @@ int DatabaseManager::addCategory(const QString& name, const QColor& color)
     if (rows.isEmpty()) return -1;
     int newId = rows.first()["id"].toInt();
     qDebug() << "[DB] Added Category" << name << "with ID" << newId;
-    emit dataChanged();
+    emitDataChanged();
     return newId;
 }
 
@@ -815,7 +836,7 @@ bool DatabaseManager::renameCategory(int id, const QString& newName)
         "UPDATE Categories SET Name = :n WHERE ID = :id",
         {{":n", newName}, {":id", id}}
     );
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -825,7 +846,7 @@ bool DatabaseManager::setCategoryColor(int id, const QColor& color)
         "UPDATE Categories SET Color = :c WHERE ID = :id",
         {{":c", color.name()}, {":id", id}}
     );
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -835,7 +856,7 @@ bool DatabaseManager::removeCategory(int id)
     // dependent entities lose their category but survive. SQLite does
     // that automatically when foreign_keys = ON (set in initialize()).
     bool ok = executeQuery("DELETE FROM Categories WHERE ID = :id", {{":id", id}});
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -877,7 +898,7 @@ bool DatabaseManager::assignCategory(int entityId, int categoryId)
         "UPDATE CoursesProjects SET CategoryID = :cat WHERE ID = :id",
         {{":cat", catParam}, {":id", entityId}}
     );
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -901,7 +922,7 @@ bool DatabaseManager::setCourseStatus(int courseId, const QString& status)
         "UPDATE CoursesProjects SET Status = :s WHERE ID = :id",
         {{":s", status}, {":id", courseId}}
     );
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -938,7 +959,7 @@ bool DatabaseManager::upsertProjectMeta(const ProjectMetaData& meta)
         {":team",     stringListToJson(meta.team)},
         {":links",    linksToJson(meta.links)},
     });
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -1014,7 +1035,7 @@ int DatabaseManager::addTodo(const QString& title, const QString& priority)
     auto rows = executeSelectQuery("SELECT last_insert_rowid() AS id");
     if (rows.isEmpty()) return -1;
     int newId = rows.first()["id"].toInt();
-    emit dataChanged();
+    emitDataChanged();
     return newId;
 }
 
@@ -1041,7 +1062,7 @@ bool DatabaseManager::toggleTodoCompleted(int id)
 
     if (!ok) { rollbackTransaction(); return false; }
     commitTransaction();
-    emit dataChanged();
+    emitDataChanged();
     return true;
 }
 
@@ -1051,14 +1072,14 @@ bool DatabaseManager::setTodoPriority(int id, const QString& priority)
         "UPDATE Todos SET Priority = :p WHERE ID = :id",
         {{":p", priority}, {":id", id}}
     );
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
 bool DatabaseManager::removeTodo(int id)
 {
     bool ok = executeQuery("DELETE FROM Todos WHERE ID = :id", {{":id", id}});
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -1140,7 +1161,7 @@ int DatabaseManager::insertPomodoroSession(int courseId, int durationMin, const 
     auto rows = executeSelectQuery("SELECT last_insert_rowid() AS id");
     if (rows.isEmpty()) return -1;
     int newId = rows.first()["id"].toInt();
-    emit dataChanged();
+    emitDataChanged();
     return newId;
 }
 
@@ -1241,7 +1262,7 @@ bool DatabaseManager::upsertDay(const CalendarDayData& data)
         {":done",  stringListToJson(data.completed)},
         {":notes", data.notes},
     });
-    if (ok) emit dataChanged();
+    if (ok) emitDataChanged();
     return ok;
 }
 
@@ -1329,7 +1350,7 @@ bool DatabaseManager::setProfile(const ProfileData& profile)
            && setSetting("profile.goals", profile.goals);
     if (!ok) { rollbackTransaction(); return false; }
     commitTransaction();
-    emit dataChanged();
+    emitDataChanged();
     return true;
 }
 
@@ -1354,7 +1375,7 @@ bool DatabaseManager::setPreferences(const PreferencesData& prefs)
            && setSetting("courses.autoPauseDays", QString::number(prefs.autoPauseDays));
     if (!ok) { rollbackTransaction(); return false; }
     commitTransaction();
-    emit dataChanged();
+    emitDataChanged();
     return true;
 }
 

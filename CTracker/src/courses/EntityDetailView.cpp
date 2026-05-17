@@ -107,9 +107,13 @@ void EntityDetailView::loadEntity(int entityId) {
 }
 
 void EntityDetailView::clearUnits() {
+    // Disconnect all signals before deleting to prevent dangling connections
     for (UnitExpandableWidget* u : m_unitWidgets) {
-        m_unitsLayout->removeWidget(u);
-        u->deleteLater();
+        if (u) {
+            disconnect(u, nullptr, this, nullptr);
+            m_unitsLayout->removeWidget(u);
+            u->deleteLater();
+        }
     }
     m_unitWidgets.clear();
 }

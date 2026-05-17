@@ -55,10 +55,7 @@ void UnitExpandableWidget::setupUi() {
 
 void UnitExpandableWidget::setExpanded(bool expanded) {
     if (m_expanded == expanded) {
-        m_content->setVisible(expanded);
-        m_expandButton->setText(expanded ? QStringLiteral("\u25BC")
-                                         : QStringLiteral("\u25B6"));
-        return;
+        return;  // Already in the desired state
     }
     m_expanded = expanded;
     m_content->setVisible(expanded);
@@ -101,8 +98,11 @@ void UnitExpandableWidget::removeSessionTask(int sessionId) {
         return;
     }
     SessionTaskRow* row = it.value();
-    m_contentLayout->removeWidget(row);
-    row->deleteLater();
+    if (row) {
+        disconnect(row, nullptr, this, nullptr);  // Disconnect signals first
+        m_contentLayout->removeWidget(row);
+        row->deleteLater();
+    }
     m_rows.erase(it);
     refreshOverall();
 }

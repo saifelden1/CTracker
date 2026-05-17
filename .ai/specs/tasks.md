@@ -433,35 +433,35 @@ otifications.enabled=1\, \sound.enabled=1\, \courses.autoPauseDays=30\
 ## Phase 9: Testing
 
 ### Task 9.1: DatabaseManager v1 tests
-- [ ] `initialize()` creates all base tables
-- [ ] `addCourse` / `addProject` return valid IDs
-- [ ] `addUnit` fails on invalid parent
-- [ ] `updateSessionTaskProgress` out-of-range is rejected
-- [ ] Cascade delete: deleting a Course removes Units & Sessions
-- [ ] `logActivity` is NOT called when `oldValue == newValue`
+- [x] `initialize()` creates all base tables
+- [x] `addCourse` / `addProject` return valid IDs
+- [x] `addUnit` fails on invalid parent
+- [x] `updateSessionTaskProgress` out-of-range is rejected
+- [x] Cascade delete: deleting a Course removes Units & Sessions
+- [x] `logActivity` is NOT called when `oldValue == newValue`
 
 ### Task 9.2: DatabaseManager v2 tests
-- [ ] Fresh DB ends at `schema_version='2'`
-- [ ] v1 sample DB migrates to v2 without data loss
-- [ ] `migrate()` is idempotent (running twice produces no errors)
-- [ ] `removeCategory` nulls dependent entities without deleting them
-- [ ] `setCourseStatus('paused')` excludes the course from `fetchAllCourses(activeOnly=true)`
-- [ ] `getPomodoroState` round-trips a saved state
+- [x] Fresh DB ends at `schema_version='2'`
+- [x] v1 sample DB migrates to v2 without data loss
+- [x] `migrate()` is idempotent (running twice produces no errors)
+- [x] `removeCategory` nulls dependent entities without deleting them
+- [x] `setCourseStatus('paused')` excludes the course from `fetchAllCourses(activeOnly=true)`
+- [x] `getPomodoroState` round-trips a saved state
 
 ### Task 9.3: Model tests
-- [ ] `ActivityLogModel::getDailyProgressTotals` correct sums
-- [ ] `DataImporter` rejects missing `type`; clamps progress > 100
-- [ ] `DataExporter` produces valid JSON that re-imports
-- [ ] `HeatmapAggregator::RecentBuckets` produces correct buckets for known counts
-- [ ] `TodoModel` separates active vs completed correctly
-- [ ] `CategoryModel::entityCount` matches actual DB join
+- [x] `ActivityLogModel::getDailyProgressTotals` correct sums
+- [x] `DataImporter` rejects missing `type`; clamps progress > 100
+- [x] `DataExporter` produces valid JSON that re-imports
+- [x] `HeatmapAggregator::RecentBuckets` produces correct buckets for known counts
+- [x] `TodoModel` separates active vs completed correctly
+- [x] `CategoryModel::entityCount` matches actual DB join
 
 ### Task 9.4: Widget tests
-- [ ] `CircularProgressBar::setProgress(-1)` → 0; `setProgress(150)` → 100
-- [ ] `UnitExpandableWidget::calculateOverallProgress()` returns 0 with no children
-- [ ] `PomodoroTimerWidget` ticks down once per second (use `QSignalSpy` + 3 s wait)
-- [ ] Auto-switch from Work → Break inserts a session row
-- [ ] Pause + resume preserves remaining time
+- [x] `CircularProgressBar::setProgress(-1)` → 0; `setProgress(150)` → 100
+- [x] `UnitExpandableWidget::calculateOverallProgress()` returns 0 with no children
+- [x] `PomodoroTimerWidget` ticks down once per second (use `QSignalSpy` + 3 s wait)
+- [x] Auto-switch from Work → Break inserts a session row
+- [x] Pause + resume preserves remaining time
 
 ---
 

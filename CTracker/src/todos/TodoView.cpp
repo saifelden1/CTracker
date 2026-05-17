@@ -11,6 +11,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QTimer>
 
 // Task 7.7: TodoView implementation.
 
@@ -182,15 +183,20 @@ void TodoView::onAddTodo() {
 }
 
 void TodoView::onTodoCompletedToggled(int todoId, bool completed) {
+    Q_UNUSED(completed);
     auto* db = DatabaseManager::instance();
     db->toggleTodoCompleted(todoId);
-    refreshTodos();
+    
+    // Delay refresh to avoid deleting the sender widget immediately
+    QTimer::singleShot(0, this, &TodoView::refreshTodos);
 }
 
 void TodoView::onTodoDeleteRequested(int todoId) {
     auto* db = DatabaseManager::instance();
     db->removeTodo(todoId);
-    refreshTodos();
+    
+    // Delay refresh to avoid deleting the sender widget immediately
+    QTimer::singleShot(0, this, &TodoView::refreshTodos);
 }
 
 void TodoView::onDataChanged() {

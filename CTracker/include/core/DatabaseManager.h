@@ -37,6 +37,10 @@ public:
     bool initialize(const QString& dbPath = QString());
     bool isOpen() const;
     void close();
+    
+    // ---- Batch update mode (prevents signal spam) ----
+    void beginBatchUpdate();  // Temporarily block dataChanged signals
+    void endBatchUpdate();    // Re-enable and emit one dataChanged
 
     // ---- Entity (Course / Project) operations ----
     int  addCourse(const QString& name);
@@ -74,6 +78,9 @@ public:
     //  Phase 4 — Extended v2 API
     //
     //  Everything below was added once the v2 schema landed (Phase 2).
+
+    // ---- Test accessor (for unit tests only) ----
+    QSqlDatabase database() const { return m_database; }
     //  Each block maps 1:1 to one Phase-4 task in tasks.md so the
     //  surface is easy to audit against the spec.
     //
@@ -145,6 +152,9 @@ signals:
 private:
     // Private constructor — only instance() can create this object
     explicit DatabaseManager(QObject* parent = nullptr);
+    
+    // Helper to emit dataChanged respecting batch mode
+    void emitDataChanged();
     ~DatabaseManager() = default;
 
     // Disable copy — a Singleton must never be copied
@@ -178,6 +188,10 @@ private:
 
     // The actual SQLite connection object
     QSqlDatabase m_database;
+    
+    // Batch update mode flag
+    bool m_batchUpdateMode = false;
+    bool m_pendingDataChanged = false;
 
     // Static pointer — holds the one instance
     static DatabaseManager* s_instance;
