@@ -285,10 +285,12 @@ void ProjectDetailView::refreshProjectInfo() {
     }
 
     // ── Team members ──
-    // Clear old team labels
-    while (auto* child = m_teamContainer->findChild<QLabel*>()) {
-        m_teamLayout->removeWidget(child);
-        child->deleteLater();
+    // Clear old team labels. deleteLater() is unsafe in a findChild loop:
+    // the child remains discoverable until the event loop runs.
+    QLayoutItem* item = nullptr;
+    while ((item = m_teamLayout->takeAt(0)) != nullptr) {
+        delete item->widget();
+        delete item;
     }
 
     if (m_projectMeta.team.isEmpty()) {
@@ -312,10 +314,10 @@ void ProjectDetailView::refreshProjectInfo() {
     }
 
     // ── Links ──
-    // Clear old link labels
-    while (auto* child = m_linksContainer->findChild<QLabel*>()) {
-        m_linksLayout->removeWidget(child);
-        child->deleteLater();
+    // Clear old link labels.
+    while ((item = m_linksLayout->takeAt(0)) != nullptr) {
+        delete item->widget();
+        delete item;
     }
 
     if (m_projectMeta.links.isEmpty()) {

@@ -30,6 +30,9 @@ MainWindow::MainWindow(QWidget* parent)
     setObjectName("mainWindow");
     setWindowTitle(tr("CTracker"));
     setMinimumSize(1280, 800);
+    
+    // Set window icon
+    setWindowIcon(QIcon(":/icons/logo.svg"));
 
     // Force window flags to ensure it shows
     setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::WindowSystemMenuHint | 

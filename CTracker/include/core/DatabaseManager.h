@@ -192,6 +192,7 @@ private:
     // Batch update mode flag
     bool m_batchUpdateMode = false;
     bool m_pendingDataChanged = false;
+    bool m_dataChangedQueued = false;
 
     // Static pointer — holds the one instance
     static DatabaseManager* s_instance;

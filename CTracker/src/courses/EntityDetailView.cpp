@@ -107,12 +107,13 @@ void EntityDetailView::loadEntity(int entityId) {
 }
 
 void EntityDetailView::clearUnits() {
-    // Disconnect all signals before deleting to prevent dangling connections
+    // Disconnect before deletion so old row signals cannot fire while the
+    // detail view is rebuilding after a database refresh.
     for (UnitExpandableWidget* u : m_unitWidgets) {
         if (u) {
             disconnect(u, nullptr, this, nullptr);
             m_unitsLayout->removeWidget(u);
-            u->deleteLater();
+            delete u;
         }
     }
     m_unitWidgets.clear();

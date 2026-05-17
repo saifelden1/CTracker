@@ -38,7 +38,6 @@ QHash<int, QByteArray> CategoryModel::roleNames() const {
 
 void CategoryModel::refresh() {
     beginResetModel();
-    m_categories.clear();
-    // Dummy / basic implementation, full query would go here
+    m_categories = DatabaseManager::instance()->fetchAllCategories();
     endResetModel();
 }

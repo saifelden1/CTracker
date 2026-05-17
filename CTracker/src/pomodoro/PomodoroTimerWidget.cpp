@@ -98,20 +98,26 @@ void PomodoroTimerWidget::setMode(Mode mode) {
 void PomodoroTimerWidget::setWorkDurationMinutes(int minutes) {
     if (minutes <= 0) return;
     m_workDurationMinutes = minutes;
-    if (m_mode == Mode::Work && m_state == State::Idle) {
+    if (m_mode == Mode::Work) {
         m_totalSeconds = minutes * 60;
-        m_remainingSeconds = m_totalSeconds;
-        updateDisplay();
+        // Only reset remaining time if timer is idle
+        if (m_state == State::Idle) {
+            m_remainingSeconds = m_totalSeconds;
+            updateDisplay();
+        }
     }
 }
 
 void PomodoroTimerWidget::setBreakDurationMinutes(int minutes) {
     if (minutes <= 0) return;
     m_breakDurationMinutes = minutes;
-    if (m_mode == Mode::Break && m_state == State::Idle) {
+    if (m_mode == Mode::Break) {
         m_totalSeconds = minutes * 60;
-        m_remainingSeconds = m_totalSeconds;
-        updateDisplay();
+        // Only reset remaining time if timer is idle
+        if (m_state == State::Idle) {
+            m_remainingSeconds = m_totalSeconds;
+            updateDisplay();
+        }
     }
 }
 

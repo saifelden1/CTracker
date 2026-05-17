@@ -10,6 +10,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QSet>
+#include <QTimer>
 
 // ============================================================
 //  DatabaseManager.cpp  �  Implementation
@@ -118,9 +119,18 @@ void DatabaseManager::endBatchUpdate() {
 void DatabaseManager::emitDataChanged() {
     if (m_batchUpdateMode) {
         m_pendingDataChanged = true;
-    } else {
-        emit dataChanged();
+        return;
     }
+
+    if (m_dataChangedQueued) {
+        return;
+    }
+
+    m_dataChangedQueued = true;
+    QTimer::singleShot(0, this, [this]() {
+        m_dataChangedQueued = false;
+        emit dataChanged();
+    });
 }
 
 // ============================================================

@@ -1,6 +1,7 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
     <file alias="styles/dark-industrial.qss">../assets/styles/dark-industrial.qss</file>
+    <file alias="icons/logo.svg">../assets/icons/logo.svg</file>
     <file alias="icons/lucide/home.svg">../assets/icons/lucide/home.svg</file>
     <file alias="icons/lucide/book-open.svg">../assets/icons/lucide/book-open.svg</file>
     <file alias="icons/lucide/folder-kanban.svg">../assets/icons/lucide/folder-kanban.svg</file>

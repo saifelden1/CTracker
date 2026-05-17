@@ -1,0 +1,28 @@
+# AI and Agent Files
+.ai/
+.claude/
+.geminirules
+CLAUDE.md
+prompt.md
+.instructions.md
+
+# Build directories
+build/
+bin/
+lib/
+CTracker/build/
+CTracker/bin/
+CTracker/lib/
+
+# Editor and IDE
+.vscode/
+*.code-workspace
+*.user
+*.bak
+*.swp
+
+# OS Files
+.DS_Store
+Thumbs.db
+*.exe
+*.out

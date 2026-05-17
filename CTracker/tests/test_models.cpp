@@ -260,6 +260,9 @@ private slots:
 
     // ---- Test 6: TodoModel active vs completed ----
     void test_todoModel_active_vs_completed() {
+        const int initialActiveCount = m_db->fetchActiveTodos().size();
+        const int initialCompletedCount = m_db->fetchCompletedTodos().size();
+
         // Add some todos
         int todo1Id = m_db->addTodo("Active Todo 1", "high");
         int todo2Id = m_db->addTodo("Active Todo 2", "medium");
@@ -276,12 +279,19 @@ private slots:
         QList<TodoData> active = m_db->fetchActiveTodos();
         QList<TodoData> completed = m_db->fetchCompletedTodos();
         
-        QCOMPARE(active.size(), 2);
-        QCOMPARE(completed.size(), 1);
+        QCOMPARE(active.size(), initialActiveCount + 2);
+        QCOMPARE(completed.size(), initialCompletedCount + 1);
         
-        // Verify the completed one
-        QCOMPARE(completed[0].id, todo3Id);
-        QVERIFY(completed[0].completed);
+        // Verify the todo completed by this test is present.
+        bool foundCompletedTodo = false;
+        for (const TodoData& todo : completed) {
+            if (todo.id == todo3Id) {
+                foundCompletedTodo = true;
+                QVERIFY(todo.completed);
+                break;
+            }
+        }
+        QVERIFY(foundCompletedTodo);
     }
 
     // ---- Test 7: CategoryModel entity count ----

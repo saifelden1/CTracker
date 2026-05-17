@@ -13,6 +13,7 @@ $qtPaths = @(
     "$env:QTDIR",
     # E: drive paths (user's Qt location)
     "E:\Qt\6.8.0\msvc2022_64",
+    "E:\Qt\6.8.7\mingw_64",
     "E:\Qt\6.7.0\msvc2022_64",
     "E:\Qt\6.6.0\msvc2022_64",
     "E:\Qt\6.5.0\msvc2022_64",
@@ -22,6 +23,7 @@ $qtPaths = @(
     "E:\Qt\6.6.0\mingw_64",
     # C: drive paths
     "C:\Qt\6.8.0\msvc2022_64",
+    "C:\Qt\6.8.7\mingw_64",
     "C:\Qt\6.7.0\msvc2022_64",
     "C:\Qt\6.6.0\msvc2022_64",
     "C:\Qt\6.5.0\msvc2022_64",
@@ -97,6 +99,19 @@ if (Test-Path $windeployqt) {
     
     # Run windeployqt
     & $windeployqt "CTracker\build\CTracker.exe" --no-translations --no-system-d3d-compiler --no-opengl-sw
+
+    $platformDir = "CTracker\build\platforms"
+    if (-not (Test-Path $platformDir)) {
+        New-Item -ItemType Directory -Path $platformDir | Out-Null
+    }
+
+    foreach ($platformPlugin in @("qoffscreen.dll", "qminimal.dll")) {
+        $source = "$qtDir\plugins\platforms\$platformPlugin"
+        if (Test-Path $source) {
+            Copy-Item $source "$platformDir\$platformPlugin" -Force
+            Write-Host "  Copied test platform plugin: $platformPlugin" -ForegroundColor Green
+        }
+    }
     
     Write-Host ""
     Write-Host "Deployment complete!" -ForegroundColor Green
@@ -129,7 +144,7 @@ if (Test-Path $windeployqt) {
         }
     }
     
-    # Copy platform plugin
+    # Copy platform plugins
     Write-Host ""
     Write-Host "Copying platform plugins..." -ForegroundColor Cyan
     $platformDir = "CTracker\build\platforms"
@@ -137,10 +152,14 @@ if (Test-Path $windeployqt) {
         New-Item -ItemType Directory -Path $platformDir | Out-Null
     }
     
-    $qwindows = "$qtDir\plugins\platforms\qwindows.dll"
-    if (Test-Path $qwindows) {
-        Copy-Item $qwindows "$platformDir\qwindows.dll" -Force
-        Write-Host "  Copied: qwindows.dll" -ForegroundColor Green
+    foreach ($platformPlugin in @("qwindows.dll", "qoffscreen.dll", "qminimal.dll")) {
+        $source = "$qtDir\plugins\platforms\$platformPlugin"
+        if (Test-Path $source) {
+            Copy-Item $source "$platformDir\$platformPlugin" -Force
+            Write-Host "  Copied: $platformPlugin" -ForegroundColor Green
+        } else {
+            Write-Host "  Warning: $platformPlugin not found" -ForegroundColor Yellow
+        }
     }
     
     # Copy SQL drivers

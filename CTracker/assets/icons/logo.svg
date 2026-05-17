@@ -1,0 +1,14 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="24" cy="24" r="22" fill="#10b981" opacity="0.15"/>
+  
+  <!-- Main circle progress ring -->
+  <circle cx="24" cy="24" r="18" stroke="#10b981" stroke-width="3" fill="none" stroke-linecap="round" 
+          stroke-dasharray="70 43" transform="rotate(-90 24 24)"/>
+  
+  <!-- Checkmark -->
+  <path d="M16 24 L21 29 L32 18" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Small accent dot -->
+  <circle cx="38" cy="10" r="3" fill="#10b981"/>
+</svg>

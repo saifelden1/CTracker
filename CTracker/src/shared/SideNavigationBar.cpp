@@ -64,12 +64,16 @@ void SideNavigationBar::setupUi() {
     m_header->setFixedHeight(64);
     auto* headerLayout = new QHBoxLayout(m_header);
     headerLayout->setContentsMargins(16, 12, 16, 12);
-    headerLayout->setSpacing(8);
+    headerLayout->setSpacing(12);
 
-    auto* logoLabel = new QLabel(QStringLiteral("\u2302"), m_header);  // ⌂ placeholder
+    // Logo with SVG icon
+    auto* logoLabel = new QLabel(m_header);
     logoLabel->setObjectName("sideNavLogo");
-    logoLabel->setFixedSize(32, 32);
+    logoLabel->setFixedSize(40, 40);
     logoLabel->setAlignment(Qt::AlignCenter);
+    logoLabel->setScaledContents(true);
+    QIcon logoIcon(":/icons/logo.svg");
+    logoLabel->setPixmap(logoIcon.pixmap(40, 40));
 
     auto* appNameLabel = new QLabel(QStringLiteral("CTracker"), m_header);
     appNameLabel->setObjectName("sideNavAppName");

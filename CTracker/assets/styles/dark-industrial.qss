@@ -239,32 +239,41 @@ QComboBox {
 
 QComboBox:hover {
     border-color: #404854;
+    background-color: #252932;
 }
 
 QComboBox:focus {
     border-color: #10b981;
+    background-color: #252932;
 }
 
 QComboBox:disabled {
     color: #6b7280;
     border-color: #1f2229;
+    background-color: #16181d;
 }
 
 QComboBox::drop-down {
     border: none;
     width: 24px;
+    background-color: transparent;
 }
 
 QComboBox::down-arrow {
     image: none;
-    width: 8px;
-    height: 8px;
-    border-left: 2px solid #9ca3af;
-    border-bottom: 2px solid #9ca3af;
-    margin-right: 6px;
-    /* CSS triangle trick not supported in QSS — use background trick */
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid #9ca3af;
+    margin-right: 8px;
 }
 
+QComboBox::down-arrow:hover {
+    border-top-color: #e4e6eb;
+}
+
+/* Dropdown popup styling */
 QComboBox QAbstractItemView {
     background-color: #1f2229;
     color: #e4e6eb;
@@ -273,15 +282,49 @@ QComboBox QAbstractItemView {
     selection-background-color: #064e3b;
     selection-color: #10b981;
     outline: none;
+    padding: 4px;
 }
 
 QComboBox QAbstractItemView::item {
-    padding: 6px 12px;
-    min-height: 32px;
+    background-color: transparent;
+    color: #e4e6eb;
+    padding: 8px 12px;
+    min-height: 28px;
+    border-radius: 4px;
 }
 
 QComboBox QAbstractItemView::item:hover {
     background-color: #2d323d;
+    color: #e4e6eb;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: #064e3b;
+    color: #10b981;
+}
+
+/* Specific styling for Pomodoro dropdowns */
+QComboBox#pomodoroCourseDropdown,
+QComboBox#pomodoroWorkDuration,
+QComboBox#pomodoroBreakDuration {
+    background-color: #1f2229;
+    border: 1px solid #2d323d;
+    padding: 8px 12px;
+    min-height: 32px;
+}
+
+QComboBox#pomodoroCourseDropdown:hover,
+QComboBox#pomodoroWorkDuration:hover,
+QComboBox#pomodoroBreakDuration:hover {
+    background-color: #252932;
+    border-color: #404854;
+}
+
+QComboBox#pomodoroCourseDropdown:focus,
+QComboBox#pomodoroWorkDuration:focus,
+QComboBox#pomodoroBreakDuration:focus {
+    background-color: #252932;
+    border-color: #10b981;
 }
 
 
