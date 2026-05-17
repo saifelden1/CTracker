@@ -9,15 +9,18 @@
 #include <QFontMetrics>
 #include <QLocale>
 
-// Canonical palette tokens (matching CLAUDE.md §5)
-static const QColor kBg         { "#1a1d24" };
-static const QColor kSurface    { "#252932" };
-static const QColor kSurfaceHover{ "#2d323d" };
-static const QColor kPrimary    { "#10b981" };
-static const QColor kText       { "#e4e6eb" };
-static const QColor kMuted      { "#9ca3af" };
-static const QColor kSubtle     { "#6b7280" };
-static const QColor kBorder     { "#2d323d" };
+// Canonical palette tokens (matching CLAUDE.md §5).
+// NOTE: QColor must be constructed from numeric RGB at file-scope.
+// QColor("#hex") touches QtGui internals that are not yet initialized
+// during pre-main dynamic init and corrupts the heap on Windows/MinGW.
+static const QColor kBg         (0x1a, 0x1d, 0x24);
+static const QColor kSurface    (0x25, 0x29, 0x32);
+static const QColor kSurfaceHover(0x2d, 0x32, 0x3d);
+static const QColor kPrimary    (0x10, 0xb9, 0x81);
+static const QColor kText       (0xe4, 0xe6, 0xeb);
+static const QColor kMuted      (0x9c, 0xa3, 0xaf);
+static const QColor kSubtle     (0x6b, 0x72, 0x80);
+static const QColor kBorder     (0x2d, 0x32, 0x3d);
 
 CalendarWidget::CalendarWidget(QWidget* parent)
     : QWidget(parent) {

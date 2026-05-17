@@ -33,7 +33,7 @@ signals:
 
 private:
     void setupUi();
-    QPushButton* makeNavButton(const QString& icon, const QString& label, const QString& tooltip);
+    QPushButton* makeNavButton(const QString& iconPath, const QString& activeIconPath, const QString& label, const QString& tooltip);
 
     QWidget*            m_header       = nullptr;
     QWidget*            m_footer       = nullptr;

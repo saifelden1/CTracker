@@ -170,7 +170,20 @@ void EntityDetailView::onAddUnitClicked() {
     if (trimmed.isEmpty()) {
         return;
     }
-    DatabaseManager::instance()->addUnit(m_entityId, trimmed);
+    
+    // Add unit with error checking
+    auto* db = DatabaseManager::instance();
+    if (!db) {
+        QMessageBox::critical(this, tr("Error"), tr("Database not available"));
+        return;
+    }
+    
+    const int unitId = db->addUnit(m_entityId, trimmed);
+    if (unitId < 0) {
+        QMessageBox::critical(this, tr("Error"), tr("Failed to add unit"));
+        return;
+    }
+    
     // dataChanged() signal triggers onDataChanged → rebuild.
 }
 

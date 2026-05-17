@@ -12,13 +12,16 @@ int main(int argc, char* argv[]) {
     auto* db = DatabaseManager::instance();
     if (!db->initialize()) {
         QMessageBox::critical(nullptr,
-            QObject::tr("CTracker"),
-            QObject::tr("Failed to initialize the database. The application will exit."));
+            QObject::tr("Database Error"),
+            QObject::tr("Failed to initialize the database.\n\nThe application will exit."));
         return 1;
     }
 
-    MainWindow window;
-    window.show();
+    MainWindow* window = new MainWindow();
+    window->setAttribute(Qt::WA_DeleteOnClose);
+    window->show();
+    window->raise();
+    window->activateWindow();
 
     const int rc = app.exec();
     db->close();

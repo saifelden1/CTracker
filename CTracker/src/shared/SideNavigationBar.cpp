@@ -17,7 +17,8 @@ SideNavigationBar::SideNavigationBar(QWidget* parent)
     setupUi();
 }
 
-QPushButton* SideNavigationBar::makeNavButton(const QString& icon,
+QPushButton* SideNavigationBar::makeNavButton(const QString& iconPath,
+                                               const QString& activeIconPath,
                                                const QString& label,
                                                const QString& tooltip) {
     auto* btn = new QPushButton(this);
@@ -27,14 +28,21 @@ QPushButton* SideNavigationBar::makeNavButton(const QString& icon,
     btn->setCursor(Qt::PointingHandCursor);
     btn->setMinimumHeight(48);
 
+    // Save the icon paths as custom properties for dynamic updates
+    btn->setProperty("iconPath", iconPath);
+    btn->setProperty("activeIconPath", activeIconPath);
+
     // Layout: icon (left) + label (center-left)
     auto* layout = new QHBoxLayout(btn);
     layout->setContentsMargins(16, 8, 16, 8);
     layout->setSpacing(12);
 
-    auto* iconLabel = new QLabel(icon, btn);
+    auto* iconLabel = new QLabel(btn);
+    iconLabel->setObjectName("navIconLabel");
     iconLabel->setFixedSize(24, 24);
     iconLabel->setAlignment(Qt::AlignCenter);
+    QIcon qicon(iconPath);
+    iconLabel->setPixmap(qicon.pixmap(24, 24));
 
     auto* textLabel = new QLabel(label, btn);
     textLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
@@ -75,19 +83,20 @@ void SideNavigationBar::setupUi() {
     m_group = new QButtonGroup(this);
     m_group->setExclusive(true);
 
-    // Order matches the Page enum; icons are Unicode placeholders until Phase 8.4 SVG icons.
-    const struct { const char* icon; const char* label; const char* tip; } defs[PageCount] = {
-        { "\u2302", "Home",      "Home Dashboard"       },  // ⌂
-        { "\u{1F4DA}", "Courses",   "Courses"              },  // 📚
-        { "\u{1F4C1}", "Projects",  "Projects"             },  // 📁
-        { "\u2611", "To-Do",     "To-Do List"           },  // ☑
-        { "\u23F1", "Pomodoro",  "Pomodoro Timer"       },  // ⏱
-        { "\u{1F4CA}", "Analytics", "Analytics & Reports"  },  // 📊
-        { "\u2699", "Settings",  "Settings"             }   // ⚙
+    // Order matches the Page enum
+    const struct { const char* icon; const char* activeIcon; const char* label; const char* tip; } defs[PageCount] = {
+        { ":/icons/lucide/home.svg",        ":/icons/lucide/home-active.svg",        "Home",      "Home Dashboard"       },
+        { ":/icons/lucide/book-open.svg",   ":/icons/lucide/book-open-active.svg",   "Courses",   "Courses"              },
+        { ":/icons/lucide/folder-kanban.svg", ":/icons/lucide/folder-kanban-active.svg", "Projects",  "Projects"             },
+        { ":/icons/lucide/check-square.svg", ":/icons/lucide/check-square-active.svg", "To-Do",     "To-Do List"           },
+        { ":/icons/lucide/timer.svg",        ":/icons/lucide/timer-active.svg",        "Pomodoro",  "Pomodoro Timer"       },
+        { ":/icons/lucide/bar-chart-3.svg",  ":/icons/lucide/bar-chart-3-active.svg",  "Analytics", "Analytics & Reports"  },
+        { ":/icons/lucide/settings.svg",     ":/icons/lucide/settings-active.svg",     "Settings",  "Settings"             }
     };
 
     for (int i = 0; i < PageCount; ++i) {
-        QPushButton* btn = makeNavButton(QString::fromUtf8(defs[i].icon),
+        QPushButton* btn = makeNavButton(QString::fromLatin1(defs[i].icon),
+                                         QString::fromLatin1(defs[i].activeIcon),
                                          QString::fromLatin1(defs[i].label),
                                          QString::fromLatin1(defs[i].tip));
         m_buttons.append(btn);
@@ -139,6 +148,15 @@ void SideNavigationBar::setActiveButton(int index) {
             QSignalBlocker blocker(btn);
             btn->setChecked(active);
         }
+        
+        // Update the icon to active/inactive version
+        auto* iconLabel = btn->findChild<QLabel*>("navIconLabel");
+        if (iconLabel) {
+            QString path = active ? btn->property("activeIconPath").toString() : btn->property("iconPath").toString();
+            QIcon qicon(path);
+            iconLabel->setPixmap(qicon.pixmap(24, 24));
+        }
+
         // Property-based styling: QSS can target QPushButton[active="true"]
         btn->setProperty("active", active);
         btn->style()->unpolish(btn);

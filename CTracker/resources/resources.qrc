@@ -1,4 +1,25 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
+    <file alias="styles/dark-industrial.qss">../assets/styles/dark-industrial.qss</file>
+    <file alias="icons/lucide/home.svg">../assets/icons/lucide/home.svg</file>
+    <file alias="icons/lucide/book-open.svg">../assets/icons/lucide/book-open.svg</file>
+    <file alias="icons/lucide/folder-kanban.svg">../assets/icons/lucide/folder-kanban.svg</file>
+    <file alias="icons/lucide/check-square.svg">../assets/icons/lucide/check-square.svg</file>
+    <file alias="icons/lucide/timer.svg">../assets/icons/lucide/timer.svg</file>
+    <file alias="icons/lucide/bar-chart-3.svg">../assets/icons/lucide/bar-chart-3.svg</file>
+    <file alias="icons/lucide/settings.svg">../assets/icons/lucide/settings.svg</file>
+    <file alias="icons/lucide/plus.svg">../assets/icons/lucide/plus.svg</file>
+    <file alias="icons/lucide/search.svg">../assets/icons/lucide/search.svg</file>
+    <file alias="icons/lucide/filter.svg">../assets/icons/lucide/filter.svg</file>
+    <file alias="icons/lucide/x.svg">../assets/icons/lucide/x.svg</file>
+    <file alias="icons/lucide/chevron-left.svg">../assets/icons/lucide/chevron-left.svg</file>
+    <file alias="icons/lucide/chevron-right.svg">../assets/icons/lucide/chevron-right.svg</file>
+    <file alias="icons/lucide/home-active.svg">../assets/icons/lucide/home-active.svg</file>
+    <file alias="icons/lucide/book-open-active.svg">../assets/icons/lucide/book-open-active.svg</file>
+    <file alias="icons/lucide/folder-kanban-active.svg">../assets/icons/lucide/folder-kanban-active.svg</file>
+    <file alias="icons/lucide/check-square-active.svg">../assets/icons/lucide/check-square-active.svg</file>
+    <file alias="icons/lucide/timer-active.svg">../assets/icons/lucide/timer-active.svg</file>
+    <file alias="icons/lucide/bar-chart-3-active.svg">../assets/icons/lucide/bar-chart-3-active.svg</file>
+    <file alias="icons/lucide/settings-active.svg">../assets/icons/lucide/settings-active.svg</file>
 </qresource>
 </RCC>

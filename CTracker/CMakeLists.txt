@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 # Find Qt 6
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql Test)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql Charts Svg Test)
 
 enable_testing()
 
@@ -38,6 +38,7 @@ set(SOURCES
     src/shared/SideNavigationBar.cpp
     src/shared/HomeDashboard.cpp
     src/shared/MainWindow.cpp
+    src/shared/EntityCreateDialog.cpp
 
     # calendar/
     src/calendar/CalendarWidget.cpp
@@ -60,6 +61,7 @@ set(SOURCES
 
     # pomodoro/
     src/pomodoro/PomodoroTimerWidget.cpp
+    src/pomodoro/PomodoroView.cpp
 
     # analytics/
     src/analytics/ActivityLogModel.cpp
@@ -74,6 +76,7 @@ set(SOURCES
     # todos/
     src/todos/TodoModel.cpp
     src/todos/TodoRow.cpp
+    src/todos/TodoView.cpp
 )
 
 # Header files (AUTOMOC processes these)
@@ -93,6 +96,7 @@ set(HEADERS
     include/shared/SideNavigationBar.h
     include/shared/HomeDashboard.h
     include/shared/MainWindow.h
+    include/shared/EntityCreateDialog.h
 
     # calendar/
     include/calendar/CalendarWidget.h
@@ -109,6 +113,7 @@ set(HEADERS
 
     # pomodoro/
     include/pomodoro/PomodoroTimerWidget.h
+    include/pomodoro/PomodoroView.h
 
     # projects/
     include/projects/ProjectCard.h
@@ -129,10 +134,12 @@ set(HEADERS
     # todos/
     include/todos/TodoModel.h
     include/todos/TodoRow.h
+    include/todos/TodoView.h
 )
 
 # Create executable
 qt_add_executable(CTracker
+    # WIN32 removed temporarily to see console output
     MANUAL_FINALIZATION
     ${SOURCES}
     ${HEADERS}
@@ -148,6 +155,25 @@ target_link_libraries(CTracker PRIVATE
     Qt6::Gui          # QColor and friends — pulled in by core/DataStructures.h
     Qt6::Widgets
     Qt6::Sql
+    Qt6::Charts
+    Qt6::Svg          # SVG icon rendering (Task 8.4)
 )
+
+# Make this a proper Windows GUI app — no console window at launch.
+# Without this, the PE subsystem stays "CONSOLE" and launching the exe
+# opens an extra empty terminal alongside the window.
+#
+# With MinGW we cannot use WIN32_EXECUTABLE because Qt's QtEntryPoint
+# pulls in the MSVC-only `__imp___argc`/`__imp___argv` symbols which
+# don't exist in MinGW. Instead set the linker subsystem directly so
+# our `int main(int, char*[])` entrypoint stays the one used.
+if (WIN32 AND MINGW)
+    target_link_options(CTracker PRIVATE -Wl,-subsystem,windows)
+else()
+    set_target_properties(CTracker PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
+
+# Finalize the executable (required for WIN32 apps)
+qt_finalize_target(CTracker)
 
 add_subdirectory(tests)

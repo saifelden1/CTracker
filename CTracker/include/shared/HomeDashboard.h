@@ -8,6 +8,7 @@ class CalendarWidget;
 class DayDetailsPanel;
 class ContributionHeatmap;
 class QLabel;
+class QTimer;
 
 // Task 7.2: HomeDashboard — final unified form.
 // Top row: 3 × StatsCard (Active Courses, Projects, Completion Rate).
@@ -47,6 +48,8 @@ private:
     int  countProjectsDueSoon() const;  // within 7 days
     int  computeCompletionRate() const; // average progress of active courses
 
+    QTimer* m_refreshTimer = nullptr;  // Debounce timer for dataChanged
+    
     // Top row: 3 stats cards
     StatsCard* m_activeCoursesCard = nullptr;
     StatsCard* m_projectsCard      = nullptr;

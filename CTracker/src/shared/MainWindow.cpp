@@ -5,20 +5,42 @@
 #include <QWidget>
 #include <QFile>
 #include <QTextStream>
+#include <QSettings>
+#include <QScreen>
+#include <QGuiApplication>
+#include <QCloseEvent>
 
 #include "shared/SideNavigationBar.h"
 #include "shared/HomeDashboard.h"
+#include "shared/EntityCreateDialog.h"
+#include "courses/CoursesView.h"
 #include "courses/CourseDetailView.h"
+#include "projects/ProjectsView.h"
 #include "projects/ProjectDetailView.h"
+#include "todos/TodoView.h"
+#include "pomodoro/PomodoroView.h"
 #include "analytics/AnalyticsView.h"
 #include "settings/SettingsView.h"
-#include "analytics/ActivityLogModel.h"
+
+// Task 7.12: MainWindow — 7 main pages + 2 hidden detail pages.
+// Min size 1280×800; persist geometry via QSettings.
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
     setObjectName("mainWindow");
     setWindowTitle(tr("CTracker"));
-    setMinimumSize(900, 600);
+    setMinimumSize(1280, 800);
+
+    // Force window flags to ensure it shows
+    setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::WindowSystemMenuHint | 
+                   Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint | 
+                   Qt::WindowCloseButtonHint);
+
+    // Restore saved geometry
+    QSettings settings;
+    const QSize savedSize = settings.value("mainWindow/size", QSize(1280, 800)).toSize();
+    resize(savedSize);
+
     setupUi();
     setupConnections();
     loadStyleSheet();
@@ -30,22 +52,44 @@ void MainWindow::setupUi() {
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
+    qDebug() << "Creating SideNavigationBar...";
     m_sideNav = new SideNavigationBar(central);
 
-    m_activityModel = new ActivityLogModel(this);
-
+    qDebug() << "Creating QStackedWidget...";
     m_stack = new QStackedWidget(central);
-    m_home          = new HomeDashboard(m_stack);
-    m_courseDetail  = new CourseDetailView(m_stack);
-    m_projectDetail = new ProjectDetailView(m_stack);
-    m_analytics     = new AnalyticsView(m_activityModel, m_stack);
-    m_settings      = new SettingsView(m_stack);
 
-    m_stack->insertWidget(HomeStack,      m_home);
-    m_stack->insertWidget(CourseStack,    m_courseDetail);
-    m_stack->insertWidget(ProjectStack,   m_projectDetail);
-    m_stack->insertWidget(AnalyticsStack, m_analytics);
-    m_stack->insertWidget(SettingsStack,  m_settings);
+    // 7 main pages in order matching SideNavigationBar::Page enum
+    qDebug() << "Creating HomeDashboard...";
+    m_home           = new HomeDashboard(m_stack);
+    qDebug() << "Creating CoursesView...";
+    m_courses        = new CoursesView(m_stack);
+    qDebug() << "Creating ProjectsView...";
+    m_projects       = new ProjectsView(m_stack);
+    qDebug() << "Creating TodoView...";
+    m_todo           = new TodoView(m_stack);
+    qDebug() << "Creating PomodoroView...";
+    m_pomodoro       = new PomodoroView(m_stack);
+    qDebug() << "Creating AnalyticsView...";
+    m_analytics      = new AnalyticsView(m_stack);
+    qDebug() << "Creating SettingsView...";
+    m_settings       = new SettingsView(m_stack);
+
+    // 2 hidden detail pages (reached via card clicks)
+    qDebug() << "Creating CourseDetailView...";
+    m_courseDetail   = new CourseDetailView(m_stack);
+    qDebug() << "Creating ProjectDetailView...";
+    m_projectDetail  = new ProjectDetailView(m_stack);
+
+    // Insert in StackIndex order
+    m_stack->insertWidget(HomeStack,         m_home);
+    m_stack->insertWidget(CoursesStack,      m_courses);
+    m_stack->insertWidget(ProjectsStack,     m_projects);
+    m_stack->insertWidget(TodoStack,         m_todo);
+    m_stack->insertWidget(PomodoroStack,     m_pomodoro);
+    m_stack->insertWidget(AnalyticsStack,    m_analytics);
+    m_stack->insertWidget(SettingsStack,     m_settings);
+    m_stack->insertWidget(CourseDetailStack, m_courseDetail);
+    m_stack->insertWidget(ProjectDetailStack, m_projectDetail);
     m_stack->setCurrentIndex(HomeStack);
 
     layout->addWidget(m_sideNav);
@@ -55,18 +99,31 @@ void MainWindow::setupUi() {
 }
 
 void MainWindow::setupConnections() {
-    // The sidebar exposes 5 buttons (Home, Courses, Projects, Analytics, Settings).
-    // Base Phase 6 maps Courses & Projects buttons to the matching detail views,
-    // showing the last loaded entity (or the empty state). Phase 6 expansion
-    // replaces them with CoursesView / ProjectsView list pages.
+    // ── Navigation ──────────────────────────────────────────
     connect(m_sideNav, &SideNavigationBar::navigationRequested,
             this, &MainWindow::onNavigationRequested);
 
+    // ── Home dashboard → detail views ───────────────────────
     connect(m_home, &HomeDashboard::courseSelected,
             this, &MainWindow::onCourseSelected);
     connect(m_home, &HomeDashboard::projectSelected,
             this, &MainWindow::onProjectSelected);
 
+    // ── Courses list → course detail ────────────────────────
+    connect(m_courses, &CoursesView::courseSelected,
+            this, &MainWindow::onCourseSelected);
+
+    // ── Projects list → project detail ──────────────────────
+    connect(m_projects, &ProjectsView::projectSelected,
+            this, &MainWindow::onProjectSelected);
+
+    // ── "Add New" buttons → EntityCreateDialog ──────────────
+    connect(m_courses, &CoursesView::addNewRequested,
+            this, &MainWindow::onAddNewCourseRequested);
+    connect(m_projects, &ProjectsView::addNewRequested,
+            this, &MainWindow::onAddNewProjectRequested);
+
+    // ── Detail view back buttons ────────────────────────────
     connect(m_courseDetail,  &CourseDetailView::backRequested,
             this, &MainWindow::onDetailBackRequested);
     connect(m_projectDetail, &ProjectDetailView::backRequested,
@@ -86,43 +143,65 @@ void MainWindow::loadStyleSheet() {
 }
 
 void MainWindow::onNavigationRequested(int pageIndex) {
-    switch (pageIndex) {
-        case SideNavigationBar::HomePage:
-            m_stack->setCurrentIndex(HomeStack);
-            break;
-        case SideNavigationBar::CoursesPage:
-            // Base Phase 6: jump to last-loaded course detail (Home if none).
-            m_stack->setCurrentIndex(
-                m_courseDetail->currentEntityId() >= 0 ? CourseStack : HomeStack);
-            break;
-        case SideNavigationBar::ProjectsPage:
-            m_stack->setCurrentIndex(
-                m_projectDetail->currentEntityId() >= 0 ? ProjectStack : HomeStack);
-            break;
-        case SideNavigationBar::AnalyticsPage:
-            m_stack->setCurrentIndex(AnalyticsStack);
-            break;
-        case SideNavigationBar::SettingsPage:
-            m_stack->setCurrentIndex(SettingsStack);
-            break;
-        default:
-            break;
-    }
+    // pageIndex maps 1:1 to SideNavigationBar::Page enum and StackIndex
+    m_stack->setCurrentIndex(pageIndex);
 }
 
 void MainWindow::onCourseSelected(int courseId) {
     m_courseDetail->loadCourse(courseId);
-    m_stack->setCurrentIndex(CourseStack);
+    m_stack->setCurrentIndex(CourseDetailStack);
     m_sideNav->setActiveButton(SideNavigationBar::CoursesPage);
 }
 
 void MainWindow::onProjectSelected(int projectId) {
     m_projectDetail->loadProject(projectId);
-    m_stack->setCurrentIndex(ProjectStack);
+    m_stack->setCurrentIndex(ProjectDetailStack);
     m_sideNav->setActiveButton(SideNavigationBar::ProjectsPage);
 }
 
 void MainWindow::onDetailBackRequested() {
-    m_stack->setCurrentIndex(HomeStack);
-    m_sideNav->setActiveButton(SideNavigationBar::HomePage);
+    // Return to the list page (Courses or Projects) depending on which detail was shown
+    const int currentIndex = m_stack->currentIndex();
+    if (currentIndex == CourseDetailStack) {
+        m_stack->setCurrentIndex(CoursesStack);
+    } else if (currentIndex == ProjectDetailStack) {
+        m_stack->setCurrentIndex(ProjectsStack);
+    } else {
+        m_stack->setCurrentIndex(HomeStack);
+    }
+    // Keep the sidebar button matching the page we returned to
+    const int newIndex = m_stack->currentIndex();
+    m_sideNav->setActiveButton(newIndex);
+}
+
+void MainWindow::onAddNewCourseRequested() {
+    EntityCreateDialog dlg(EntityCreateDialog::Mode::CourseOrProject, this);
+    if (dlg.exec() == QDialog::Accepted) {
+        const int id = dlg.createdEntityId();
+        if (id >= 0) {
+            if (dlg.entityType() == "course") {
+                onCourseSelected(id);
+            } else {
+                onProjectSelected(id);
+            }
+        }
+    }
+}
+
+void MainWindow::onAddNewProjectRequested() {
+    EntityCreateDialog dlg(EntityCreateDialog::Mode::ProjectOnly, this);
+    if (dlg.exec() == QDialog::Accepted) {
+        const int id = dlg.createdEntityId();
+        if (id >= 0) {
+            onProjectSelected(id);
+        }
+    }
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    // Persist window geometry via QSettings
+    QSettings settings;
+    settings.setValue("mainWindow/size", size());
+    settings.setValue("mainWindow/pos", pos());
+    event->accept();
 }

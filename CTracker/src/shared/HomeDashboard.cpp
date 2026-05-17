@@ -12,14 +12,30 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QDate>
+#include <QTimer>
 
 // Task 7.2: HomeDashboard — final unified form with stats, calendar, day details, and heatmap.
 
 HomeDashboard::HomeDashboard(QWidget* parent)
     : QWidget(parent) {
     setupUi();
+    
+    // Use a timer to debounce dataChanged signals (prevent rapid successive refreshes)
+    m_refreshTimer = new QTimer(this);
+    m_refreshTimer->setSingleShot(true);
+    m_refreshTimer->setInterval(100);  // 100ms debounce
+    connect(m_refreshTimer, &QTimer::timeout, this, [this]() {
+        refreshStatsCards();
+        refreshCalendar();
+        refreshHeatmap();
+    });
+    
     connect(DatabaseManager::instance(), &DatabaseManager::dataChanged,
-            this, &HomeDashboard::onDataChanged);
+            this, [this]() {
+        // Restart timer on each dataChanged - only refresh after 100ms of no changes
+        m_refreshTimer->start();
+    });
+    
     refreshStatsCards();
     refreshCalendar();
     refreshHeatmap();

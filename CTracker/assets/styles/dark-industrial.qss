@@ -1,0 +1,1061 @@
+/* ==========================================================================
+   dark-industrial.qss  —  CTracker Dark Industrial Theme
+   Tasks 8.1 + 8.2
+   --------------------------------------------------------------------------
+   Palette tokens (inline since QSS has no variables):
+     Background:    #1a1d24  (main)  |  #1f2229 (elevated)
+     Surface:       #252932  (card)  |  #2d323d (surface-hover)
+     Sidebar:       #16181d
+     Text:          #e4e6eb  (main)  |  #9ca3af (muted)  |  #6b7280 (subtle)
+     Accent:        #10b981  (primary)  |  #059669 (hover)  |  #064e3b (muted)
+     Border:        #2d323d  (normal)  |  #404854 (strong)
+     Error:         #ef4444   Warning: #f59e0b   Info: #3b82f6
+   Spacing (inline): xs=4  sm=8  md=16  lg=24  xl=32  2xl=48
+   Border-radius:    sm=4  md=6  lg=8  xl=12
+   Base font:       14px, weight 400
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. BASE — QWidget / QMainWindow / QFrame
+   ========================================================================== */
+
+QWidget {
+    background-color: #1a1d24;
+    color: #e4e6eb;
+    font-size: 14px;
+    font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
+    border: none;
+    outline: none;
+}
+
+QMainWindow {
+    background-color: #1a1d24;
+}
+
+QFrame {
+    background-color: #252932;
+    border-radius: 8px;
+    border: 1px solid #2d323d;
+}
+
+QFrame[frameShape="0"] {
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+}
+
+
+/* ==========================================================================
+   2. LABELS
+   ========================================================================== */
+
+QLabel {
+    background-color: transparent;
+    color: #e4e6eb;
+    border: none;
+    border-radius: 0;
+}
+
+
+/* ==========================================================================
+   3. SCROLLAREA / SCROLLBAR
+   ========================================================================== */
+
+QScrollArea {
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+}
+
+QScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+
+QScrollBar:vertical {
+    background-color: #1f2229;
+    width: 8px;
+    border-radius: 4px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #404854;
+    border-radius: 4px;
+    min-height: 32px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #10b981;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background-color: #1f2229;
+    height: 8px;
+    border-radius: 4px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #404854;
+    border-radius: 4px;
+    min-width: 32px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #10b981;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+
+/* ==========================================================================
+   4. QPUSHBUTTON (generic)
+   ========================================================================== */
+
+QPushButton {
+    background-color: #252932;
+    color: #e4e6eb;
+    border: 1px solid #2d323d;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    background-color: #2d323d;
+    border-color: #10b981;
+    color: #e4e6eb;
+}
+
+QPushButton:pressed {
+    background-color: #064e3b;
+    border-color: #10b981;
+    color: #10b981;
+}
+
+QPushButton:disabled {
+    background-color: #1f2229;
+    color: #6b7280;
+    border-color: #2d323d;
+}
+
+/* Primary accent button (use setProperty("primary", true)) */
+QPushButton[primary="true"] {
+    background-color: #10b981;
+    color: #0f172a;
+    border: none;
+    font-weight: 600;
+}
+
+QPushButton[primary="true"]:hover {
+    background-color: #059669;
+}
+
+QPushButton[primary="true"]:pressed {
+    background-color: #064e3b;
+    color: #10b981;
+}
+
+/* Danger/destructive button */
+QPushButton[danger="true"] {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+QPushButton[danger="true"]:hover {
+    background-color: rgba(239, 68, 68, 0.25);
+    border-color: #ef4444;
+}
+
+
+/* ==========================================================================
+   5. QLINEEDIT / QTEXTEDIT / QPLAINTEXTEDIT
+   ========================================================================== */
+
+QLineEdit {
+    background-color: #1f2229;
+    color: #e4e6eb;
+    border: 1px solid #2d323d;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+    selection-background-color: #064e3b;
+    selection-color: #10b981;
+}
+
+QLineEdit:focus {
+    border-color: #10b981;
+    background-color: #252932;
+}
+
+QLineEdit:disabled {
+    color: #6b7280;
+    border-color: #1f2229;
+}
+
+QLineEdit::placeholder {
+    color: #6b7280;
+}
+
+QTextEdit {
+    background-color: #1f2229;
+    color: #e4e6eb;
+    border: 1px solid #2d323d;
+    border-radius: 6px;
+    padding: 8px;
+    selection-background-color: #064e3b;
+    selection-color: #10b981;
+}
+
+QTextEdit:focus {
+    border-color: #10b981;
+}
+
+
+/* ==========================================================================
+   6. QCOMBOBOX
+   ========================================================================== */
+
+QComboBox {
+    background-color: #1f2229;
+    color: #e4e6eb;
+    border: 1px solid #2d323d;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+    min-width: 80px;
+}
+
+QComboBox:hover {
+    border-color: #404854;
+}
+
+QComboBox:focus {
+    border-color: #10b981;
+}
+
+QComboBox:disabled {
+    color: #6b7280;
+    border-color: #1f2229;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    width: 8px;
+    height: 8px;
+    border-left: 2px solid #9ca3af;
+    border-bottom: 2px solid #9ca3af;
+    margin-right: 6px;
+    /* CSS triangle trick not supported in QSS — use background trick */
+}
+
+QComboBox QAbstractItemView {
+    background-color: #1f2229;
+    color: #e4e6eb;
+    border: 1px solid #404854;
+    border-radius: 6px;
+    selection-background-color: #064e3b;
+    selection-color: #10b981;
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item {
+    padding: 6px 12px;
+    min-height: 32px;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: #2d323d;
+}
+
+
+/* ==========================================================================
+   7. QSLIDER
+   ========================================================================== */
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background-color: #2d323d;
+    border-radius: 2px;
+}
+
+QSlider::sub-page:horizontal {
+    background-color: #10b981;
+    border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+    background-color: #10b981;
+    border: 2px solid #059669;
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    margin: -6px 0;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #059669;
+    border-color: #10b981;
+}
+
+QSlider::handle:horizontal:pressed {
+    background-color: #064e3b;
+}
+
+
+/* ==========================================================================
+   8. QCHECKBOX
+   ========================================================================== */
+
+QCheckBox {
+    background-color: transparent;
+    color: #e4e6eb;
+    spacing: 8px;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #404854;
+    border-radius: 4px;
+    background-color: #1f2229;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #10b981;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #10b981;
+    border-color: #10b981;
+    /* Would need an SVG for the checkmark — QSS limitation */
+}
+
+QCheckBox::indicator:checked:hover {
+    background-color: #059669;
+}
+
+
+/* ==========================================================================
+   9. QPROGRESSBAR (horizontal — ProjectCard)
+   ========================================================================== */
+
+QProgressBar {
+    background-color: #2d323d;
+    border: none;
+    border-radius: 4px;
+    text-align: center;
+    color: transparent;
+}
+
+QProgressBar::chunk {
+    background-color: #10b981;
+    border-radius: 4px;
+}
+
+QProgressBar#projectProgressBar {
+    height: 8px;
+}
+
+QProgressBar#projectProgressBar::chunk {
+    background-color: #10b981;
+}
+
+
+/* ==========================================================================
+   10. QTABWIDGET / QTABBAR
+   ========================================================================== */
+
+QTabWidget::pane {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+QTabBar::tab {
+    background-color: transparent;
+    color: #9ca3af;
+    padding: 8px 16px;
+    border-bottom: 2px solid transparent;
+    font-size: 14px;
+}
+
+QTabBar::tab:selected {
+    color: #10b981;
+    border-bottom-color: #10b981;
+}
+
+QTabBar::tab:hover:!selected {
+    color: #e4e6eb;
+}
+
+
+/* ==========================================================================
+   11. QMESSAGEBOX / QDIALOG
+   ========================================================================== */
+
+QDialog {
+    background-color: #1f2229;
+    border: 1px solid #404854;
+    border-radius: 8px;
+}
+
+QMessageBox {
+    background-color: #1f2229;
+}
+
+QMessageBox QLabel {
+    color: #e4e6eb;
+}
+
+
+/* ==========================================================================
+   12. QINPUTDIALOG
+   ========================================================================== */
+
+QInputDialog {
+    background-color: #1f2229;
+}
+
+
+/* ==========================================================================
+   13. QTOOLBUTTON
+   ========================================================================== */
+
+QToolButton {
+    background-color: transparent;
+    color: #9ca3af;
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+QToolButton:hover {
+    background-color: #2d323d;
+    color: #e4e6eb;
+}
+
+
+/* ==========================================================================
+   14. QMENU
+   ========================================================================== */
+
+QMenu {
+    background-color: #1f2229;
+    border: 1px solid #404854;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+QMenu::item {
+    color: #e4e6eb;
+    padding: 6px 24px;
+    border-radius: 4px;
+}
+
+QMenu::item:selected {
+    background-color: #2d323d;
+    color: #10b981;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #2d323d;
+    margin: 4px 0;
+}
+
+
+/* ==========================================================================
+   15. CHART CONTAINERS (QChartView / QFrame wrappers)
+   ========================================================================== */
+
+QChartView {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+
+/* ==========================================================================
+   16. SIDE NAVIGATION BAR
+   ========================================================================== */
+
+QWidget#sideNavigationBar {
+    background-color: #16181d;
+    border-right: 1px solid #2d323d;
+    border-radius: 0;
+}
+
+QWidget#sideNavHeader {
+    background-color: #16181d;
+    border-bottom: 1px solid #2d323d;
+    border-radius: 0;
+}
+
+QLabel#sideNavLogo {
+    background-color: #10b981;
+    color: #0f172a;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+QLabel#sideNavAppName {
+    color: #e4e6eb;
+    font-size: 16px;
+    font-weight: 700;
+    background-color: transparent;
+}
+
+QPushButton#navButton {
+    background-color: transparent;
+    color: #9ca3af;
+    border: none;
+    border-radius: 0;
+    border-left: 3px solid transparent;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 0;
+}
+
+QPushButton#navButton:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: #e4e6eb;
+    border-left-color: transparent;
+}
+
+QPushButton#navButton[active="true"] {
+    background-color: rgba(16, 185, 129, 0.08);
+    color: #10b981;
+    border-left: 3px solid #10b981;
+    font-weight: 600;
+}
+
+QPushButton#navButton[active="true"]:hover {
+    background-color: rgba(16, 185, 129, 0.12);
+}
+
+QWidget#sideNavFooter {
+    background-color: #16181d;
+    border-top: 1px solid #2d323d;
+    border-radius: 0;
+}
+
+QLabel#sideNavUserName {
+    color: #9ca3af;
+    font-size: 13px;
+    background-color: transparent;
+}
+
+
+/* ==========================================================================
+   17. STATS CARD  (#statsCard)
+   ========================================================================== */
+
+QFrame#statsCard {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+QFrame#statsCard:hover,
+QFrame#statsCard[hover="true"] {
+    border-color: #10b981;
+    background-color: #2d323d;
+}
+
+QLabel#statsCardTitle {
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: transparent;
+}
+
+QLabel#statsCardValue {
+    color: #e4e6eb;
+    font-size: 28px;
+    font-weight: 700;
+    background-color: transparent;
+}
+
+QLabel#statsCardSubtitle {
+    color: #6b7280;
+    font-size: 12px;
+    background-color: transparent;
+}
+
+QLabel#statsCardBadge {
+    color: #f59e0b;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: rgba(245, 158, 11, 0.12);
+    border-radius: 4px;
+    padding: 2px 8px;
+}
+
+
+/* ==========================================================================
+   18. ENTITY CARD  (#entityCard)
+   ========================================================================== */
+
+QFrame#entityCard {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+QFrame#entityCard:hover,
+QFrame#entityCard[hover="true"] {
+    border-color: #10b981;
+    background-color: #2d323d;
+}
+
+QLabel#entityTypeBadge {
+    background-color: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+}
+
+QLabel#entityStatusBadge {
+    background-color: rgba(156, 163, 175, 0.15);
+    color: #9ca3af;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+
+/* ==========================================================================
+   19. PROJECT CARD  (#projectCard)
+   ========================================================================== */
+
+QFrame#projectCard {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+QFrame#projectCard:hover,
+QFrame#projectCard[hover="true"] {
+    border-color: #10b981;
+    background-color: #2d323d;
+}
+
+QLabel#projectCardName {
+    color: #e4e6eb;
+    font-size: 15px;
+    font-weight: 600;
+    background-color: transparent;
+}
+
+QLabel#projectCardDesc {
+    color: #9ca3af;
+    font-size: 13px;
+    background-color: transparent;
+}
+
+QLabel#projectTaskCount,
+QLabel#projectTeamSize {
+    color: #6b7280;
+    font-size: 12px;
+    background-color: transparent;
+}
+
+
+/* ==========================================================================
+   20. TODO ROW  (#todoRow)
+   ========================================================================== */
+
+QWidget#todoRow {
+    background-color: transparent;
+    border-bottom: 1px solid #1f2229;
+    border-radius: 0;
+}
+
+QWidget#todoRow:hover,
+QWidget#todoRow[hover="true"] {
+    background-color: #2d323d;
+    border-radius: 6px;
+}
+
+QWidget#todoRow[completed="true"] {
+    opacity: 0.6;
+}
+
+QPushButton#todoDeleteBtn {
+    background-color: transparent;
+    color: #6b7280;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    padding: 0;
+}
+
+QPushButton#todoDeleteBtn:hover {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.12);
+}
+
+
+/* ==========================================================================
+   21. POMODORO VIEW — mode toggle, settings card, stat boxes
+   ========================================================================== */
+
+/* Mode toggle buttons — shared styling */
+QPushButton#pomodoroWorkModeBtn,
+QPushButton#pomodoroBreakModeBtn {
+    background-color: #1f2229;
+    color: #9ca3af;
+    border: 1px solid #2d323d;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Active (checked) state — primary accent */
+QPushButton#pomodoroWorkModeBtn:checked,
+QPushButton#pomodoroBreakModeBtn:checked {
+    background-color: #10b981;
+    color: #0f172a;
+    border-color: #10b981;
+    font-weight: 600;
+}
+
+QPushButton#pomodoroWorkModeBtn:hover:!checked,
+QPushButton#pomodoroBreakModeBtn:hover:!checked {
+    background-color: #2d323d;
+    color: #e4e6eb;
+}
+
+/* Settings card */
+QFrame#pomodoroSettingsCard {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+QLabel#pomodoroSettingsTitle {
+    color: #e4e6eb;
+    font-size: 15px;
+    font-weight: 600;
+    background-color: transparent;
+}
+
+/* Today's progress and recent sessions cards */
+QFrame#pomodoroTodayCard,
+QFrame#pomodoroRecentCard {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+QLabel#pomodoroTodayTitle,
+QLabel#pomodoroRecentTitle {
+    color: #e4e6eb;
+    font-size: 15px;
+    font-weight: 600;
+    background-color: transparent;
+}
+
+/* Stat boxes inside today card */
+QWidget#pomodoroStatBox {
+    background-color: #1f2229;
+    border-radius: 6px;
+    border: 1px solid #2d323d;
+}
+
+QLabel#pomodoroStatValue {
+    color: #10b981;
+    font-size: 28px;
+    font-weight: 700;
+    background-color: transparent;
+}
+
+QLabel#pomodoroStatLabel {
+    color: #9ca3af;
+    font-size: 12px;
+    background-color: transparent;
+}
+
+
+/* ==========================================================================
+   22. HOME DASHBOARD
+   ========================================================================== */
+
+QWidget#homeDashboard {
+    background-color: #1a1d24;
+}
+
+
+/* ==========================================================================
+   23. ANALYTICS VIEW — chart container frames
+   ========================================================================== */
+
+QFrame#analyticsChartFrame {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+QLabel#analyticsSectionTitle {
+    color: #e4e6eb;
+    font-size: 15px;
+    font-weight: 600;
+    background-color: transparent;
+}
+
+
+/* ==========================================================================
+   24. SETTINGS VIEW — section cards
+   ========================================================================== */
+
+QFrame#settingsSectionCard {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+QLabel#settingsSectionTitle {
+    color: #e4e6eb;
+    font-size: 15px;
+    font-weight: 600;
+    background-color: transparent;
+}
+
+
+/* ==========================================================================
+   25. COURSES FILTER BAR
+   ========================================================================== */
+
+QWidget#coursesFilterBar {
+    background-color: transparent;
+}
+
+QWidget#filterPanel {
+    background-color: #1f2229;
+    border: 1px solid #2d323d;
+    border-radius: 6px;
+}
+
+QLabel#activeBadge {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+QPushButton#clearFilterBtn {
+    background-color: transparent;
+    color: #6b7280;
+    border: none;
+    font-size: 12px;
+    padding: 2px 4px;
+}
+
+QPushButton#clearFilterBtn:hover {
+    color: #ef4444;
+}
+
+
+/* ==========================================================================
+   26. EMPTY STATE WIDGET
+   ========================================================================== */
+
+QWidget#emptyState {
+    background-color: transparent;
+}
+
+QLabel#emptyStateTitle {
+    color: #9ca3af;
+    font-size: 16px;
+    font-weight: 600;
+    background-color: transparent;
+}
+
+QLabel#emptyStateSubtitle {
+    color: #6b7280;
+    font-size: 13px;
+    background-color: transparent;
+}
+
+
+/* ==========================================================================
+   27. CALENDAR WIDGET
+   ========================================================================== */
+
+QWidget#calendarWidget {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+/* nav buttons */
+QPushButton#calNavPrev,
+QPushButton#calNavNext {
+    background-color: transparent;
+    color: #9ca3af;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    padding: 4px 8px;
+}
+
+QPushButton#calNavPrev:hover,
+QPushButton#calNavNext:hover {
+    background-color: #2d323d;
+    color: #e4e6eb;
+}
+
+QLabel#calMonthTitle {
+    color: #e4e6eb;
+    font-size: 15px;
+    font-weight: 600;
+    background-color: transparent;
+}
+
+
+/* ==========================================================================
+   28. DAY DETAILS PANEL
+   ========================================================================== */
+
+QWidget#dayDetailsPanel {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+QLabel#dayDetailTitle {
+    color: #e4e6eb;
+    font-size: 15px;
+    font-weight: 600;
+    background-color: transparent;
+}
+
+QPushButton#dayDetailsCloseBtn {
+    background-color: transparent;
+    color: #6b7280;
+    border: none;
+    font-size: 16px;
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+
+QPushButton#dayDetailsCloseBtn:hover {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+
+/* ==========================================================================
+   29. COURSE DETAIL VIEW / PROJECT DETAIL VIEW
+   ========================================================================== */
+
+QWidget#courseDetailView,
+QWidget#projectDetailView {
+    background-color: #1a1d24;
+}
+
+QPushButton#detailBackBtn {
+    background-color: transparent;
+    color: #9ca3af;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 13px;
+}
+
+QPushButton#detailBackBtn:hover {
+    color: #10b981;
+    background-color: rgba(16, 185, 129, 0.08);
+}
+
+QLabel#detailEntityName {
+    color: #e4e6eb;
+    font-size: 22px;
+    font-weight: 700;
+    background-color: transparent;
+}
+
+
+/* ==========================================================================
+   30. UNIT EXPANDABLE WIDGET  (#unitExpandableWidget)
+   ========================================================================== */
+
+QWidget#unitExpandableWidget {
+    background-color: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+}
+
+QPushButton#unitExpandBtn {
+    background-color: #1f2229;
+    color: #e4e6eb;
+    border: none;
+    border-radius: 6px;
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+}
+
+QPushButton#unitExpandBtn:hover {
+    background-color: #2d323d;
+}
+
+
+/* ==========================================================================
+   31. SESSION TASK ROW  (#sessionTaskRow)
+   ========================================================================== */
+
+QWidget#sessionTaskRow {
+    background-color: #1f2229;
+    border-radius: 6px;
+    border: 1px solid transparent;
+}
+
+QWidget#sessionTaskRow:hover {
+    border-color: #2d323d;
+}
+
+
+/* ==========================================================================
+   32. ENTITY CREATE DIALOG
+   ========================================================================== */
+
+QDialog#entityCreateDialog {
+    background-color: #1f2229;
+    border: 1px solid #404854;
+    border-radius: 8px;
+}
+
+
+/* ==========================================================================
+   33. STATUS BAR (if used)
+   ========================================================================== */
+
+QStatusBar {
+    background-color: #16181d;
+    color: #6b7280;
+    border-top: 1px solid #2d323d;
+}

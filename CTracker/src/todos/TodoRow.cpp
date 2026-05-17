@@ -10,9 +10,10 @@
 #include <QStyle>
 
 // Priority color mapping: high=#ef4444, medium=#f59e0b, low=#6b7280
-static const QColor kPriorityHigh   { "#ef4444" };
-static const QColor kPriorityMedium { "#f59e0b" };
-static const QColor kPriorityLow    { "#6b7280" };
+// Use numeric-RGB ctor — string-hex form is unsafe at file-scope (pre-main).
+static const QColor kPriorityHigh   (0xef, 0x44, 0x44);
+static const QColor kPriorityMedium (0xf5, 0x9e, 0x0b);
+static const QColor kPriorityLow    (0x6b, 0x72, 0x80);
 
 static QColor priorityColor(const QString& priority) {
     if (priority == "high")   return kPriorityHigh;
