@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="Photos/logo.png" alt="CTracker Logo" width="120" style="margin-bottom: 20px;" />
+
 # 🚀 CTracker
 
 **A high-performance, native desktop application for productivity tracking, learning management, and focused execution.**
@@ -14,8 +16,7 @@
 
 ---
 
-<!-- Placeholder for Hero Image or GIF -->
-> 🖼️ *[Drop an interface screenshot or GIF demo here]*
+<img src="Photos/screenshot.png" alt="CTracker App Interface" style="max-width: 100%; border-radius: 8px;" />
 
 </div>
 
