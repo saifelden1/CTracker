@@ -11,6 +11,7 @@
 #include <QScrollArea>
 #include <QResizeEvent>
 #include <QLabel>
+#include <QTimer>
 
 // ============================================================
 //  CoursesView — Task 7.3
@@ -294,6 +295,10 @@ void CoursesView::rebuildGrid() {
 void CoursesView::updateColumnCount() {
     // Compute available width for the grid (scroll area viewport width)
     int availableWidth = m_scrollArea->viewport() ? m_scrollArea->viewport()->width() : width();
+
+    // Skip recalculation when viewport hasn't been laid out yet (width ≤ 0).
+    // This prevents the grid from collapsing to 1 column on initial render.
+    if (availableWidth <= 0) return;
 
     // EntityCard is 160 px wide + 24 px spacing between columns
     // We dynamically calculate how many cards can fit in a row.

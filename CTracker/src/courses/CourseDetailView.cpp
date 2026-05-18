@@ -18,6 +18,8 @@
 #include <QResizeEvent>
 #include <QMouseEvent>
 #include <QCursor>
+#include <QMenu>
+#include <QTimer>
 
 // ============================================================
 //  CourseDetailView — Task 7.5 + 7.5a
@@ -52,22 +54,36 @@ public:
         setFlat(true);
         setFixedSize(180, 200);
         setCursor(Qt::PointingHandCursor);
-        // The "+ New Unit" text + glyph live in the button's own
-        // rich-text-like label via setText with HTML so we don't need
-        // a separate QLabel child (and don't need to override paint).
-        setText(QStringLiteral(
-            "<div style='text-align:center;'>"
-            "<div style='color:#10b981; font-size:36px; font-weight:300;'>+</div>"
-            "<div style='color:#10b981; font-size:13px; font-weight:500; margin-top:4px;'>"
-            "New Unit"
-            "</div>"
-            "</div>"));
+
+        // Use child QLabels instead of HTML setText — QPushButton doesn't
+        // render <div> elements properly, causing raw HTML text to appear.
+        auto* tileLayout = new QVBoxLayout(this);
+        tileLayout->setAlignment(Qt::AlignCenter);
+        tileLayout->setSpacing(4);
+        tileLayout->setContentsMargins(0, 0, 0, 0);
+
+        auto* plusLabel = new QLabel(QStringLiteral("+"), this);
+        plusLabel->setObjectName("addUnitPlus");
+        plusLabel->setAlignment(Qt::AlignCenter);
+        plusLabel->setStyleSheet(
+            QStringLiteral("QLabel#addUnitPlus { color: #10b981; font-size: 36px; font-weight: 300; }"));
+        plusLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+        auto* textLabel = new QLabel(QStringLiteral("New Unit"), this);
+        textLabel->setObjectName("addUnitText");
+        textLabel->setAlignment(Qt::AlignCenter);
+        textLabel->setStyleSheet(
+            QStringLiteral("QLabel#addUnitText { color: #10b981; font-size: 13px; font-weight: 500; }"));
+        textLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+        tileLayout->addWidget(plusLabel);
+        tileLayout->addWidget(textLabel);
+
         setStyleSheet(QStringLiteral(
             "QPushButton#addUnitTile {"
             "  background: rgba(16, 185, 129, 0.04);"
             "  border: 1px dashed #10b981;"
             "  border-radius: 8px;"
-            "  text-align: center;"
             "}"
             "QPushButton#addUnitTile:hover {"
             "  background: rgba(16, 185, 129, 0.10);"
@@ -134,6 +150,28 @@ void CourseDetailView::setupCourseChrome() {
         QStringLiteral("QLabel#sessionCountLabel { color: #9ca3af; font-size: 13px; }"));
     m_outerLayout->insertWidget(1, m_sessionCountLabel);
 
+    // ── Category button (clickable pill in title bar) ──
+    m_categoryBtn = new QPushButton(tr("Set Category"), m_titleBar);
+    m_categoryBtn->setObjectName("categoryBtn");
+    m_categoryBtn->setCursor(Qt::PointingHandCursor);
+    m_categoryBtn->setStyleSheet(
+        QStringLiteral(
+            "QPushButton#categoryBtn {"
+            "  background-color: rgba(156, 163, 175, 38);"
+            "  color: #9ca3af;"
+            "  border-radius: 4px;"
+            "  padding: 2px 8px;"
+            "  font-size: 12px;"
+            "  border: 1px dashed #9ca3af;"
+            "}"
+            "QPushButton#categoryBtn:hover {"
+            "  background-color: rgba(156, 163, 175, 60);"
+            "}"
+        ));
+    m_titleLayout->insertWidget(3, m_categoryBtn);
+    connect(m_categoryBtn, &QPushButton::clicked,
+            this, &CourseDetailView::onCategoryButtonClicked);
+
     // ── Hide the base class's "+ Unit" / "+ Session" buttons ──
     // We replace them with the tile + sub-view's "+ Session" button.
     if (m_addUnitBtn)    m_addUnitBtn->setVisible(false);
@@ -199,7 +237,9 @@ void CourseDetailView::loadEntity(int entityId) {
 
     if (m_entityId < 0) {
         m_courseStatus = "active";
+        m_categoryId = -1;
         refreshStatusUI();
+        refreshCategoryUI();
         clearUnitCards();
         showUnitsPage();
         return;
@@ -207,7 +247,16 @@ void CourseDetailView::loadEntity(int entityId) {
 
     auto* db = DatabaseManager::instance();
     m_courseStatus = db->getCourseStatus(m_entityId);
+    // Fetch category info from the entity data
+    const QList<EntityData> courses = db->fetchAllCourses();
+    for (const EntityData& e : courses) {
+        if (e.id == m_entityId) {
+            m_categoryId = e.categoryId;
+            break;
+        }
+    }
     refreshStatusUI();
+    refreshCategoryUI();
     rebuildUnitsGrid();
     // Always return to the grid when loading a new entity — the
     // previously-selected unit may not even belong to this course.
@@ -219,7 +268,9 @@ void CourseDetailView::onDataChanged() {
 
     if (m_entityId < 0) {
         m_courseStatus = "active";
+        m_categoryId = -1;
         refreshStatusUI();
+        refreshCategoryUI();
         clearUnitCards();
         showUnitsPage();
         return;
@@ -227,7 +278,16 @@ void CourseDetailView::onDataChanged() {
 
     auto* db = DatabaseManager::instance();
     m_courseStatus = db->getCourseStatus(m_entityId);
+    // Refresh category info
+    const QList<EntityData> courses = db->fetchAllCourses();
+    for (const EntityData& e : courses) {
+        if (e.id == m_entityId) {
+            m_categoryId = e.categoryId;
+            break;
+        }
+    }
     refreshStatusUI();
+    refreshCategoryUI();
     rebuildUnitsGrid();
 
     // If we're inside the sessions sub-view, ask it to refresh its
@@ -310,6 +370,102 @@ void CourseDetailView::refreshStatusUI() {
             .arg(units.size()));
 }
 
+// ── Category button ─────────────────────────────────────────
+void CourseDetailView::onCategoryButtonClicked() {
+    if (m_entityId < 0) return;
+
+    auto* db = DatabaseManager::instance();
+    const QList<CategoryData> categories = db->fetchAllCategories();
+
+    QMenu menu(this);
+    menu.addAction(tr("No Category"), [this]() {
+        DatabaseManager::instance()->assignCategory(m_entityId, -1);
+    });
+    menu.addSeparator();
+    for (const CategoryData& cat : categories) {
+        menu.addAction(cat.name, [this, cat]() {
+            DatabaseManager::instance()->assignCategory(m_entityId, cat.id);
+        });
+    }
+    menu.exec(QCursor::pos());
+}
+
+void CourseDetailView::refreshCategoryUI() {
+    if (m_entityId < 0 || m_categoryId < 0) {
+        m_categoryBtn->setText(tr("Set Category"));
+        m_categoryBtn->setStyleSheet(
+            QStringLiteral(
+                "QPushButton#categoryBtn {"
+                "  background-color: rgba(156, 163, 175, 38);"
+                "  color: #9ca3af;"
+                "  border-radius: 4px;"
+                "  padding: 2px 8px;"
+                "  font-size: 12px;"
+                "  border: 1px dashed #9ca3af;"
+                "}"
+                "QPushButton#categoryBtn:hover {"
+                "  background-color: rgba(156, 163, 175, 60);"
+                "}"
+            ));
+        return;
+    }
+
+    // Find the category name and color
+    auto* db = DatabaseManager::instance();
+    const QList<CategoryData> categories = db->fetchAllCategories();
+    QString catName;
+    QColor catColor;
+    for (const CategoryData& cat : categories) {
+        if (cat.id == m_categoryId) {
+            catName = cat.name;
+            catColor = cat.color;
+            break;
+        }
+    }
+
+    if (catName.isEmpty()) {
+        // Category was deleted — reset to "Set Category"
+        m_categoryId = -1;
+        m_categoryBtn->setText(tr("Set Category"));
+        m_categoryBtn->setStyleSheet(
+            QStringLiteral(
+                "QPushButton#categoryBtn {"
+                "  background-color: rgba(156, 163, 175, 38);"
+                "  color: #9ca3af;"
+                "  border-radius: 4px;"
+                "  padding: 2px 8px;"
+                "  font-size: 12px;"
+                "  border: 1px dashed #9ca3af;"
+                "}"
+                "QPushButton#categoryBtn:hover {"
+                "  background-color: rgba(156, 163, 175, 60);"
+                "}"
+            ));
+        return;
+    }
+
+    m_categoryBtn->setText(catName);
+    const int alpha15 = static_cast<int>(255 * 0.15);
+    m_categoryBtn->setStyleSheet(
+        QStringLiteral(
+            "QPushButton#categoryBtn {"
+            "  background-color: rgba(%1, %2, %3, %4);"
+            "  color: %5;"
+            "  border-radius: 4px;"
+            "  padding: 2px 8px;"
+            "  font-size: 12px;"
+            "  border: none;"
+            "}"
+            "QPushButton#categoryBtn:hover {"
+            "  background-color: rgba(%1, %2, %3, 80);"
+            "}"
+        ).arg(catColor.red())
+         .arg(catColor.green())
+         .arg(catColor.blue())
+         .arg(alpha15)
+         .arg(catColor.name()));
+}
+
 // ── Units grid (Page 0) ─────────────────────────────────────
 void CourseDetailView::clearUnitCards() {
     for (UnitCard* c : m_unitCards) {
@@ -369,6 +525,11 @@ void CourseDetailView::updateUnitColumnCount() {
         return;
     }
     const int w = m_unitsScroll ? m_unitsScroll->viewport()->width() : width();
+
+    // Skip recalculation when viewport hasn't been laid out yet (width ≤ 0).
+    // This prevents the grid from collapsing to 1 column on initial render.
+    if (w <= 0) return;
+
     int cols = 4;
     if      (w < 480)  cols = 1;
     else if (w < 720)  cols = 2;

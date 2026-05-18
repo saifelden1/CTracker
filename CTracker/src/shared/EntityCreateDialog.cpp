@@ -63,6 +63,23 @@ void EntityCreateDialog::setupUi() {
     nameRow->addWidget(m_nameEdit, 1);
     mainLayout->addLayout(nameRow);
 
+    // ── Category field ──
+    m_categoryLabel = new QLabel(tr("Category:"), this);
+    m_categoryCombo = new QComboBox(this);
+    m_categoryCombo->setObjectName("entityCategoryCombo");
+    m_categoryCombo->addItem(tr("No Category"), -1);
+    // Populate with existing categories from the database
+    auto* db = DatabaseManager::instance();
+    const QList<CategoryData> categories = db->fetchAllCategories();
+    for (const CategoryData& cat : categories) {
+        m_categoryCombo->addItem(cat.name, cat.id);
+    }
+    auto* categoryRow = new QHBoxLayout();
+    categoryRow->setSpacing(8);
+    categoryRow->addWidget(m_categoryLabel);
+    categoryRow->addWidget(m_categoryCombo, 1);
+    mainLayout->addLayout(categoryRow);
+
     // ── Project-specific fields ──
     m_descLabel = new QLabel(tr("Description:"), this);
     m_descEdit = new QTextEdit(this);
@@ -168,6 +185,12 @@ void EntityCreateDialog::onAccept() {
         db->upsertProjectMeta(meta);
     }
 
+    // Assign category if one was selected
+    const int catId = selectedCategoryId();
+    if (catId >= 0) {
+        db->assignCategory(m_createdId, catId);
+    }
+
     accept();
 }
 
@@ -177,3 +200,4 @@ int     EntityCreateDialog::createdEntityId() const  { return m_createdId; }
 QString EntityCreateDialog::description() const      { return m_descEdit->toPlainText().trimmed(); }
 QString EntityCreateDialog::priority() const         { return m_priorityCombo->currentData().toString(); }
 QDate   EntityCreateDialog::deadline() const         { return m_deadlineEdit->date(); }
+int     EntityCreateDialog::selectedCategoryId() const { return m_categoryCombo ? m_categoryCombo->currentData().toInt() : -1; }

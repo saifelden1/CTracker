@@ -12,10 +12,8 @@ class QChartView;
 
 // Task 7.9: AnalyticsView — final v2 form.
 // Top row: 4 × StatsCard (Day Streak, Total Hours, Avg Sessions/Day, Week Comparison).
-// 5 chart widgets via QChartView:
-//   - Progress over time (QLineSeries, 8 weeks)
+// 3 chart widgets via QChartView:
 //   - Study hours/week (QBarSeries, 8 weeks)
-//   - Course progress breakdown (custom horizontal-bar list)
 //   - Time distribution (QPieSeries over Pomodoro minutes per course)
 //   - Weekly activity pattern (QBarSeries, Mon-Sun)
 // Dark-themed QChart palette, custom tooltips, NoRubberBand, antialiased.
@@ -40,7 +38,6 @@ private:
     void refreshStatsCards();
     void refreshCharts();
     void refreshHeatmap();
-    void refreshCourseProgressList();
 
     // ── Stats cards ──
     StatsCard* m_streakCard      = nullptr;
@@ -49,13 +46,9 @@ private:
     StatsCard* m_weekCompCard    = nullptr;
 
     // ── Charts ──
-    QChartView* m_progressChartView    = nullptr;
     QChartView* m_hoursPerWeekView     = nullptr;
     QChartView* m_timeDistView         = nullptr;
     QChartView* m_weeklyActivityView   = nullptr;
-
-    // ── Course progress list (custom, not QChart) ──
-    QWidget*    m_courseProgressList   = nullptr;
 
     // ── Heatmap ──
     ContributionHeatmap* m_heatmap     = nullptr;

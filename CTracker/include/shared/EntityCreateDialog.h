@@ -34,6 +34,7 @@ public:
     QString description() const;    // project-only
     QString priority() const;       // project-only: "high"/"medium"/"low"
     QDate   deadline() const;       // project-only
+    int     selectedCategoryId() const; // -1 = no category selected
 
 private slots:
     void onNameChanged(const QString& text);
@@ -51,6 +52,10 @@ private:
     QComboBox*   m_typeCombo     = nullptr;   // only visible in CourseOrProject mode
     QPushButton* m_okBtn         = nullptr;
     QPushButton* m_cancelBtn     = nullptr;
+
+    // Category field
+    QLabel*      m_categoryLabel = nullptr;
+    QComboBox*   m_categoryCombo = nullptr;
 
     // Project-specific fields
     QLabel*      m_descLabel     = nullptr;

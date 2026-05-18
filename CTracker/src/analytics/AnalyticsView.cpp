@@ -19,7 +19,6 @@
 #include <algorithm>
 
 #include <QtCharts/QChartView>
-#include <QtCharts/QLineSeries>
 #include <QtCharts/QBarSeries>
 #include <QtCharts/QBarSet>
 #include <QtCharts/QPieSeries>
@@ -30,7 +29,7 @@
 
 // Task 7.9: AnalyticsView — final v2 form.
 // Top row: 4 × StatsCard.
-// 5 chart widgets + course progress list + heatmap.
+// 3 chart widgets (hours/week, time distribution, weekly activity) + heatmap.
 
 AnalyticsView::AnalyticsView(QWidget* parent)
     : QWidget(parent) {
@@ -85,54 +84,9 @@ void AnalyticsView::setupUi() {
 
     outer->addLayout(statsRow);
 
-    // ── Charts row 1: Progress over time + Study hours/week ──
+    // ── Charts row 1: Study hours/week ──
     auto* chartsRow1 = new QHBoxLayout();
     chartsRow1->setSpacing(16);
-
-    // Progress over time (line chart)
-    {
-        auto* frame = new QFrame(container);
-        frame->setObjectName("analyticsChartFrame");
-        auto* layout = new QVBoxLayout(frame);
-        layout->setContentsMargins(16, 16, 16, 16);
-        layout->setSpacing(8);
-
-        auto* chartTitle = new QLabel(tr("Progress Over Time"), frame);
-        chartTitle->setObjectName("analyticsChartTitle");
-        layout->addWidget(chartTitle);
-
-        auto* chart = new QChart();
-        chart->setTheme(QChart::ChartThemeDark);
-        chart->setMargins(QMargins(0, 0, 0, 0));
-        chart->legend()->hide();
-
-        auto* series = new QLineSeries(chart);
-        series->setColor(QColor("#10b981"));
-        series->setPointsVisible(true);
-
-        auto* axisX = new QCategoryAxis();
-        axisX->setLabelsColor(QColor("#9ca3af"));
-        axisX->setGridLineColor(QColor("#2d323d"));
-        chart->addAxis(axisX, Qt::AlignBottom);
-        chart->addSeries(series);
-        series->attachAxis(axisX);
-
-        auto* axisY = new QValueAxis();
-        axisY->setRange(0, 100);
-        axisY->setLabelsColor(QColor("#9ca3af"));
-        axisY->setGridLineColor(QColor("#2d323d"));
-        axisY->setTitleText(tr("Completion %"));
-        chart->addAxis(axisY, Qt::AlignLeft);
-        series->attachAxis(axisY);
-
-        m_progressChartView = new QChartView(chart, frame);
-        m_progressChartView->setRenderHint(QPainter::Antialiasing);
-        m_progressChartView->setRubberBand(QChartView::NoRubberBand);
-        m_progressChartView->setMinimumHeight(250);
-        layout->addWidget(m_progressChartView);
-
-        chartsRow1->addWidget(frame, 1);
-    }
 
     // Study hours/week (bar chart)
     {
@@ -181,32 +135,9 @@ void AnalyticsView::setupUi() {
 
     outer->addLayout(chartsRow1);
 
-    // ── Charts row 2: Course progress + Time distribution ──
+    // ── Charts row 2: Time distribution ──
     auto* chartsRow2 = new QHBoxLayout();
     chartsRow2->setSpacing(16);
-
-    // Course progress breakdown (custom horizontal-bar list)
-    {
-        auto* frame = new QFrame(container);
-        frame->setObjectName("analyticsChartFrame");
-        auto* layout = new QVBoxLayout(frame);
-        layout->setContentsMargins(16, 16, 16, 16);
-        layout->setSpacing(8);
-
-        auto* chartTitle = new QLabel(tr("Course Progress"), frame);
-        chartTitle->setObjectName("analyticsChartTitle");
-        layout->addWidget(chartTitle);
-
-        m_courseProgressList = new QWidget(frame);
-        m_courseProgressList->setObjectName("courseProgressList");
-        auto* listLayout = new QVBoxLayout(m_courseProgressList);
-        listLayout->setContentsMargins(0, 0, 0, 0);
-        listLayout->setSpacing(8);
-        listLayout->addStretch();
-        layout->addWidget(m_courseProgressList, 1);
-
-        chartsRow2->addWidget(frame, 1);
-    }
 
     // Time distribution (pie chart)
     {
@@ -383,42 +314,6 @@ void AnalyticsView::refreshCharts() {
     auto* db = DatabaseManager::instance();
     const QDate today = QDate::currentDate();
 
-    // ── Progress over time (8 weeks line chart) ──
-    {
-        auto* chart = m_progressChartView->chart();
-        auto* series = dynamic_cast<QLineSeries*>(chart->series().first());
-        auto* axisX = dynamic_cast<QCategoryAxis*>(chart->axes(Qt::Horizontal).first());
-        series->clear();
-        const QStringList xLabels = axisX->categoriesLabels();
-        for (const QString& lbl : xLabels)
-            axisX->remove(lbl);
-
-        for (int w = 7; w >= 0; --w) {
-            const QDate weekStart = today.addDays(-7 * w);
-            const QDate weekEnd = weekStart.addDays(6);
-            const QString label = QStringLiteral("W%1").arg(8 - w);
-
-            // Compute average completion % of active courses for this week
-            const QList<EntityData> courses = db->fetchAllCourses();
-            int totalProgress = 0;
-            int count = 0;
-            for (const EntityData& c : courses) {
-                if (c.status != "active") continue;
-                const QList<UnitData> units = db->getUnitsForParent(c.id);
-                for (const UnitData& u : units) {
-                    const QList<SessionTaskData> sessions = db->getSessionTasksForUnit(u.id);
-                    for (const SessionTaskData& s : sessions) {
-                        totalProgress += s.progress;
-                        ++count;
-                    }
-                }
-            }
-            const int avg = (count > 0) ? totalProgress / count : 0;
-            series->append(8 - w, avg);
-            axisX->append(label, 8 - w);
-        }
-    }
-
     // ── Study hours/week (8 weeks bar chart) ──
     {
         auto* chart = m_hoursPerWeekView->chart();
@@ -530,77 +425,6 @@ void AnalyticsView::refreshCharts() {
             barSet->append(avg);
             axisX->append(dayNames[day - 1], day);
         }
-    }
-
-    // ── Course progress list (custom) ──
-    refreshCourseProgressList();
-}
-
-void AnalyticsView::refreshCourseProgressList() {
-    // Clear existing items
-    auto* listLayout = m_courseProgressList->layout();
-    QLayoutItem* item;
-    while ((item = listLayout->takeAt(0)) != nullptr) {
-        if (item->widget()) item->widget()->deleteLater();
-        delete item;
-    }
-
-    auto* db = DatabaseManager::instance();
-    const QList<EntityData> courses = db->fetchAllCourses();
-
-    for (const EntityData& c : courses) {
-        if (c.status != "active") continue;
-
-        // Compute overall progress
-        const QList<UnitData> units = db->getUnitsForParent(c.id);
-        int totalProgress = 0;
-        int count = 0;
-        for (const UnitData& u : units) {
-            const QList<SessionTaskData> sessions = db->getSessionTasksForUnit(u.id);
-            for (const SessionTaskData& s : sessions) {
-                totalProgress += s.progress;
-                ++count;
-            }
-        }
-        const int avg = (count > 0) ? totalProgress / count : 0;
-
-        auto* row = new QWidget(m_courseProgressList);
-        row->setObjectName("courseProgressRow");
-        auto* rowLayout = new QHBoxLayout(row);
-        rowLayout->setContentsMargins(4, 4, 4, 4);
-        rowLayout->setSpacing(8);
-
-        auto* nameLabel = new QLabel(c.name, row);
-        nameLabel->setObjectName("courseProgressName");
-        nameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        rowLayout->addWidget(nameLabel, 1);
-
-        // Progress bar (simple QFrame-based)
-        auto* barBg = new QFrame(row);
-        barBg->setObjectName("courseProgressBarBg");
-        barBg->setFixedHeight(8);
-        barBg->setMinimumWidth(120);
-        barBg->setStyleSheet("QFrame#courseProgressBarBg { background: #2d323d; border-radius: 4px; }");
-
-        auto* barFill = new QFrame(barBg);
-        barFill->setObjectName("courseProgressBarFill");
-        barFill->setFixedHeight(8);
-        const QString fillColor = c.categoryColor.isValid()
-            ? c.categoryColor.name() : "#10b981";
-        barFill->setStyleSheet(
-            QString("QFrame#courseProgressBarFill { background: %1; border-radius: 4px; }").arg(fillColor));
-        barFill->setGeometry(0, 0, static_cast<int>(120.0 * avg / 100.0), 8);
-
-        rowLayout->addWidget(barBg);
-
-        auto* pctLabel = new QLabel(QString("%1%").arg(avg), row);
-        pctLabel->setObjectName("courseProgressPct");
-        pctLabel->setMinimumWidth(40);
-        pctLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        rowLayout->addWidget(pctLabel);
-
-        // Add to the list layout
-        listLayout->addWidget(row);
     }
 }
 

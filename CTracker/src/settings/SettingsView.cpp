@@ -656,32 +656,23 @@ void SettingsView::onClearAllData() {
     }
 
     auto* db = DatabaseManager::instance();
-    // Delete all entities (courses + projects)
-    const QList<EntityData> entities = db->fetchAllEntities();
-    for (const EntityData& e : entities) {
-        if (e.type == "course") {
-            db->removeCourse(e.id);
-        } else {
-            db->removeProject(e.id);
-        }
-    }
-    // Delete all todos
-    const QList<TodoData> activeTodos = db->fetchActiveTodos();
-    for (const TodoData& t : activeTodos) {
-        db->removeTodo(t.id);
-    }
-    const QList<TodoData> completedTodos = db->fetchCompletedTodos();
-    for (const TodoData& t : completedTodos) {
-        db->removeTodo(t.id);
-    }
-    // Delete all categories
-    const QList<CategoryData> categories = db->fetchAllCategories();
-    for (const CategoryData& c : categories) {
-        db->removeCategory(c.id);
+    const bool success = db->clearAllData();
+    if (success) {
+        refreshProfile();
+        refreshPreferences();
+        refreshCategories();
+        m_dbPathLabel->setText(resolveDatabasePath());
+        QMessageBox::information(this, tr("Cleared"),
+            tr("All data has been successfully cleared."));
+    } else {
+        QMessageBox::warning(this, tr("Error"),
+            tr("Failed to clear all data. Please try again."));
     }
 }
 
 void SettingsView::onDataChanged() {
+    refreshProfile();
+    refreshPreferences();
     refreshCategories();
     m_dbPathLabel->setText(resolveDatabasePath());
 }

@@ -11,6 +11,7 @@ class QWidget;
 class QGridLayout;
 class QScrollArea;
 class QResizeEvent;
+class QMenu;
 class UnitCard;
 class UnitSessionsView;
 
@@ -49,6 +50,7 @@ protected slots:
 
 private slots:
     void onStatusToggleClicked();
+    void onCategoryButtonClicked();
     void onUnitCardClicked(int unitId);
     void onAddUnitTileClicked();
     void onSubViewBackRequested();
@@ -59,6 +61,7 @@ private:
     void setupCourseChrome();
     void buildInnerStack();
     void refreshStatusUI();
+    void refreshCategoryUI();
 
     // Units-grid management
     void rebuildUnitsGrid();
@@ -74,6 +77,10 @@ private:
     QLabel*      m_statusBadge       = nullptr;
     QLabel*      m_sessionCountLabel = nullptr;
 
+    // Category chrome
+    QPushButton* m_categoryBtn       = nullptr;
+    int          m_categoryId        = -1;
+
     // Inner stack (Page 0 = grid, Page 1 = sessions view)
     QStackedWidget*   m_innerStack    = nullptr;
     QWidget*          m_unitsPage     = nullptr;
@@ -84,5 +91,5 @@ private:
 
     QList<UnitCard*>  m_unitCards;
     QWidget*          m_addUnitTile   = nullptr;
-    int               m_unitColumnCount = 3;
+    int               m_unitColumnCount = 4;
 };

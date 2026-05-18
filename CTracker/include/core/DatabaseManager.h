@@ -143,6 +143,9 @@ public:
     PomodoroTimerState getPomodoroState();
     bool               savePomodoroState(const PomodoroTimerState& state);
 
+    // ---- Clear all data (destructive reset) ----
+    bool clearAllData();   // DELETE all rows, reset sequences, re-seed defaults
+
     // ---- Unit activity (Task 7.5a — UnitCard subtitle) ----
     // Returns MAX(ActivityLog.Timestamp) across every session belonging
     // to the unit. Returns an invalid QDateTime when the unit has no

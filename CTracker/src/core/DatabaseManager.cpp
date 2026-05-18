@@ -771,6 +771,54 @@ bool DatabaseManager::seedDefaults()
 }
 
 // ============================================================
+//  clearAllData — destructive reset
+//
+//  Deletes every row from every table, resets auto-increment
+//  sequences, then re-seeds the default categories & settings
+//  so the app is in a clean-but-valid state.
+// ============================================================
+bool DatabaseManager::clearAllData()
+{
+    beginBatchUpdate();
+
+    static const char* kTables[] = {
+        "SessionsTasks",
+        "Units",
+        "ActivityLog",
+        "PomodoroSessions",
+        "Todos",
+        "CalendarDayDetails",
+        "ProjectMeta",
+        "CoursesProjects",
+        "Categories",
+        "Settings",
+    };
+
+    for (const char* tbl : kTables) {
+        if (!executeQuery(QString("DELETE FROM %1").arg(tbl))) {
+            endBatchUpdate();
+            return false;
+        }
+    }
+
+    // Reset auto-increment sequences so IDs start from 1 again
+    if (!executeQuery("DELETE FROM sqlite_sequence")) {
+        endBatchUpdate();
+        return false;
+    }
+
+    // Re-seed default categories and settings
+    if (!seedDefaults()) {
+        endBatchUpdate();
+        return false;
+    }
+
+    qDebug() << "[DB] All data cleared, defaults re-seeded.";
+    endBatchUpdate();   // emits one dataChanged()
+    return true;
+}
+
+// ============================================================
 //  Phase 4 — Extended v2 API
 //
 //  Every method below sits on top of the v2 schema built in

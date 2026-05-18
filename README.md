@@ -47,7 +47,33 @@ CTracker is a locally-hosted, standalone native application designed to unify yo
 *   **🎯 Todo Management:** A dedicated todo view with active/completed filtering, so nothing falls through the cracks.
 *   **🎨 Dark Industrial UI:** A highly polished, bespoke UI utilizing native Qt Widgets customized with a distraction-free QSS theme.
 
-## 🛠️ Tech Stack & Architecture
+## � Gallery
+
+Experience the bespoke Dark Industrial UI designed for zero distractions.
+
+| Main Dashboard & Overview | Analytics & Visualization |
+| :---: | :---: |
+| <img src="Photos/mainpage.png" alt="Main Page" width="450" /> | <img src="Photos/amalyitx%20view.png" alt="Analytics View" width="450" /> |
+| **Course & Unit Management** | **Activity Heatmap** |
+| <img src="Photos/coursse%20after%20adding.png" alt="Course View" width="450" /> | <img src="Photos/heatmap%20view.png" alt="Heatmap View" width="450" /> |
+| **Pomodoro Focus Sessions** | **To-Do Management** |
+| <img src="Photos/pomodoroview.png" alt="Pomodoro View" width="450" /> | <img src="Photos/todo%20vew.png" alt="Todo View" width="450" /> |
+| **Session Tracking** | **Detailed Unit Cards** |
+| <img src="Photos/sessionview.png" alt="Session View" width="450" /> | <img src="Photos/unitcard.png" alt="Unit Card" width="450" /> |
+
+<details>
+<summary><b>View more screenshots</b></summary>
+<br>
+<div align="center">
+  <img src="Photos/addingcourse.png" alt="Adding Course" width="600" style="margin-bottom: 10px;" />
+  <br>
+  <img src="Photos/unitview.png" alt="Unit View" width="600" style="margin-bottom: 10px;" />
+  <br>
+  <img src="Photos/multiples%20seesions.png" alt="Multiple Sessions" width="600" style="margin-bottom: 10px;" />
+</div>
+</details>
+
+## �🛠️ Tech Stack & Architecture
 
 CTracker prioritizes speed, native OS integration, and low memory footprint.
 
