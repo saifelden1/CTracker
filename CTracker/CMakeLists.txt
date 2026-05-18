@@ -46,12 +46,14 @@ set(SOURCES
 
     # courses/ — course / entity detail surface
     src/courses/SessionTaskRow.cpp
-    src/courses/UnitExpandableWidget.cpp
+    src/courses/UnitExpandableWidget.cpp     # still used by ProjectDetailView
     src/courses/EntityCard.cpp
     src/courses/CoursesFilterBar.cpp
     src/courses/CoursesView.cpp
     src/courses/EntityDetailView.cpp
     src/courses/CourseDetailView.cpp
+    src/courses/UnitCard.cpp                 # Task 7.5a — units-as-cards
+    src/courses/UnitSessionsView.cpp         # Task 7.5a — per-unit sub-view
 
     # projects/
     src/projects/ProjectCard.cpp
@@ -109,7 +111,9 @@ set(HEADERS
     include/courses/CoursesFilterBar.h
     include/courses/CoursesView.h
     include/courses/EntityDetailView.h
-    include/courses/CourseDetailView.h   # alias header
+    include/courses/CourseDetailView.h
+    include/courses/UnitCard.h               # Task 7.5a
+    include/courses/UnitSessionsView.h       # Task 7.5a
 
     # pomodoro/
     include/pomodoro/PomodoroTimerWidget.h

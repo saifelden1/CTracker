@@ -1447,3 +1447,35 @@ bool DatabaseManager::savePomodoroState(const PomodoroTimerState& state)
     return true;
 }
 
+// ------------------------------------------------------------
+//  lastActivityForUnit(unitId)  (Task 7.5a)
+//
+//  One indexed SELECT joining SessionsTasks → ActivityLog. Returns
+//  the most recent ActivityLog.Timestamp across every session inside
+//  this unit, or an invalid QDateTime when the unit has no activity.
+//
+//  Used by UnitCard to render "Last worked: 3 days ago" subtitles
+//  inside the course-detail units grid.
+// ------------------------------------------------------------
+QDateTime DatabaseManager::lastActivityForUnit(int unitId)
+{
+    const QString sql = QStringLiteral(
+        "SELECT MAX(a.Timestamp) AS last_ts "
+        "  FROM ActivityLog a "
+        "  JOIN SessionsTasks s ON s.ID = a.ItemID "
+        " WHERE s.UnitID = :uid");
+    const auto rows = executeSelectQuery(sql, { {":uid", unitId} });
+    if (rows.isEmpty()) {
+        return QDateTime();
+    }
+    const QVariant v = rows.first().value("last_ts");
+    if (!v.isValid() || v.isNull()) {
+        return QDateTime();
+    }
+    const QString iso = v.toString();
+    if (iso.isEmpty()) {
+        return QDateTime();
+    }
+    return QDateTime::fromString(iso, Qt::ISODate);
+}
+

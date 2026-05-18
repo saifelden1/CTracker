@@ -143,6 +143,12 @@ public:
     PomodoroTimerState getPomodoroState();
     bool               savePomodoroState(const PomodoroTimerState& state);
 
+    // ---- Unit activity (Task 7.5a — UnitCard subtitle) ----
+    // Returns MAX(ActivityLog.Timestamp) across every session belonging
+    // to the unit. Returns an invalid QDateTime when the unit has no
+    // activity yet. Read-only; does not emit dataChanged.
+    QDateTime lastActivityForUnit(int unitId);
+
 signals:
     // Emitted whenever data changes so the UI can refresh itself
     void dataChanged();
