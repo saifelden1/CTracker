@@ -192,7 +192,7 @@ See [`CTracker/tests/README.md`](CTracker/tests/README.md) for the full test cat
 *   ✅ Analytics dashboard with contribution heatmap
 *   ✅ Todo management with active/completed filtering
 *   ✅ Figma-driven dark industrial UI theme
-*   🚧 **Known Issue:** Application occasionally crashes when modifying the database via UI models. (Fix actively in progress.)
+*   🚧 **Known Issue:** You may need to resize the application window slightly for the Course View to render/display correctly.
 
 ## 📜 License
 
