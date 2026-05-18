@@ -114,11 +114,11 @@ void DayDetailsPanel::showDay(const CalendarDayData& data) {
     // Clear existing todo/completed widgets
     QLayoutItem* item;
     while ((item = m_todoSection->layout()->takeAt(0)) != nullptr) {
-        delete item->widget();
+        if (item->widget()) item->widget()->deleteLater();
         delete item;
     }
     while ((item = m_completedSection->layout()->takeAt(0)) != nullptr) {
-        delete item->widget();
+        if (item->widget()) item->widget()->deleteLater();
         delete item;
     }
 
@@ -183,11 +183,11 @@ void DayDetailsPanel::clear() {
     // Clear lists
     QLayoutItem* item;
     while ((item = m_todoSection->layout()->takeAt(0)) != nullptr) {
-        delete item->widget();
+        if (item->widget()) item->widget()->deleteLater();
         delete item;
     }
     while ((item = m_completedSection->layout()->takeAt(0)) != nullptr) {
-        delete item->widget();
+        if (item->widget()) item->widget()->deleteLater();
         delete item;
     }
 

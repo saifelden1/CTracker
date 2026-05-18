@@ -1,0 +1,74 @@
+{
+    "entities": [
+        {
+            "version": "1.0",
+            "type": "course",
+            "name": "Example Course Name",
+            "units": [
+                {
+                    "name": "Unit 1: Introduction",
+                    "sessions": [
+                        {
+                            "name": "Session 1: Getting Started",
+                            "progress": 100
+                        },
+                        {
+                            "name": "Session 2: Basics",
+                            "progress": 50
+                        },
+                        {
+                            "name": "Session 3: Advanced Topics",
+                            "progress": 0
+                        }
+                    ]
+                },
+                {
+                    "name": "Unit 2: Deep Dive",
+                    "sessions": [
+                        {
+                            "name": "Session 4: Core Concepts",
+                            "progress": 0
+                        },
+                        {
+                            "name": "Session 5: Practical Exercise",
+                            "progress": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "version": "1.0",
+            "type": "project",
+            "name": "Example Project Name",
+            "units": [
+                {
+                    "name": "Phase 1: Planning",
+                    "sessions": [
+                        {
+                            "name": "Task 1: Requirements Gathering",
+                            "progress": 100
+                        },
+                        {
+                            "name": "Task 2: Architecture Design",
+                            "progress": 25
+                        }
+                    ]
+                },
+                {
+                    "name": "Phase 2: Implementation",
+                    "sessions": [
+                        {
+                            "name": "Task 3: Core Development",
+                            "progress": 0
+                        },
+                        {
+                            "name": "Task 4: Testing & Deployment",
+                            "progress": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

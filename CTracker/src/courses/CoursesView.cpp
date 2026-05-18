@@ -144,9 +144,8 @@ void CoursesView::resizeEvent(QResizeEvent* event) {
 void CoursesView::refreshCards() {
     auto* db = DatabaseManager::instance();
 
-    // Fetch all entities (courses + projects) — the CoursesView grid
-    // displays both, matching the React reference design.
-    m_allEntities = db->fetchAllEntities();
+    // Fetch only courses (projects are shown in ProjectsView)
+    m_allEntities = db->fetchAllCourses();
 
     // Fetch categories for the filter bar and card pills
     m_categories = db->fetchAllCategories();
@@ -155,11 +154,12 @@ void CoursesView::refreshCards() {
     // Update subtitle with entity count
     if (m_allEntities.isEmpty()) {
         m_subtitleLabel->setText(
-            QStringLiteral("Start tracking your courses and projects"));
+            QStringLiteral("Start tracking your courses"));
     } else {
         m_subtitleLabel->setText(
-            QStringLiteral("%1 courses and projects")
-                .arg(m_allEntities.size()));
+            QStringLiteral("%1 course%2")
+                .arg(m_allEntities.size())
+                .arg(m_allEntities.size() == 1 ? "" : "s"));
     }
 
     // Apply current filter and rebuild
@@ -186,11 +186,11 @@ void CoursesView::applyFilter() {
         m_emptyState->setTitle(QStringLiteral("No results found"));
         if (!m_currentFilter.search.isEmpty()) {
             m_emptyState->setDescription(
-                QStringLiteral("No courses or projects match \"%1\". Try a different search term.")
+                QStringLiteral("No courses match \"%1\". Try a different search term.")
                     .arg(m_currentFilter.search));
         } else {
             m_emptyState->setDescription(
-                QStringLiteral("No courses or projects match the current filters. Try adjusting them."));
+                QStringLiteral("No courses match the current filters. Try adjusting them."));
         }
         m_emptyState->setActionLabel(QString());  // hide action button for "no results"
         m_emptyState->setVisible(true);
@@ -296,19 +296,9 @@ void CoursesView::updateColumnCount() {
     int availableWidth = m_scrollArea->viewport() ? m_scrollArea->viewport()->width() : width();
 
     // EntityCard is 160 px wide + 24 px spacing between columns
-    // Breakpoints chosen so cards don't feel cramped:
-    //   1 col: <  500 px
-    //   2 col: <  700 px
-    //   3 col: < 1000 px
-    //   4 col: ≥ 1000 px
-    int newColumnCount = 4;
-    if (availableWidth < 500) {
-        newColumnCount = 1;
-    } else if (availableWidth < 700) {
-        newColumnCount = 2;
-    } else if (availableWidth < 1000) {
-        newColumnCount = 3;
-    }
+    // We dynamically calculate how many cards can fit in a row.
+    int cardTotalWidth = 160 + 24;
+    int newColumnCount = qMax(1, (availableWidth + 24) / cardTotalWidth);
 
     if (newColumnCount != m_columnCount) {
         m_columnCount = newColumnCount;
@@ -318,11 +308,11 @@ void CoursesView::updateColumnCount() {
 
 void CoursesView::showEmptyState(bool noEntitiesAtAll) {
     if (noEntitiesAtAll) {
-        // No entities in the DB at all — show the "add first" empty state
-        m_emptyState->setTitle(QStringLiteral("No courses or projects yet"));
+        // No courses in the DB at all — show the "add first" empty state
+        m_emptyState->setTitle(QStringLiteral("No courses yet"));
         m_emptyState->setDescription(
-            QStringLiteral("Get started by adding your first course or project to begin tracking your progress."));
-        m_emptyState->setActionLabel(QStringLiteral("Add Your First Item"));
+            QStringLiteral("Get started by adding your first course to begin tracking your progress."));
+        m_emptyState->setActionLabel(QStringLiteral("Add Your First Course"));
         m_emptyState->setVisible(true);
         m_scrollArea->setVisible(false);
         m_subtitleLabel->setVisible(false);

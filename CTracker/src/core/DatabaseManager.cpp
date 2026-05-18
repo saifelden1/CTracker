@@ -467,8 +467,8 @@ static const char* kEntitySelectSql =
     "FROM   CoursesProjects cp                "
     "LEFT   JOIN Categories cat ON cat.ID = cp.CategoryID ";
 
-// Helper to convert a joined QVariantMap row ? EntityData struct.
-static EntityData rowToEntity(const QVariantMap& row) {
+// Helper to convert a joined QVariantMap row → EntityData struct.
+static EntityData rowToEntity(const QVariantMap& row, DatabaseManager* db) {
     EntityData e;
     e.id        = row["ID"].toInt();
     e.name      = row["Name"].toString();
@@ -477,13 +477,30 @@ static EntityData rowToEntity(const QVariantMap& row) {
 
     // v2: a NULL CategoryID becomes the -1 sentinel; everything else
     // tracks the joined Categories row when present, sensible empties
-    // when not. QColor("") is invalid � that's the right "no colour"
+    // when not. QColor("") is invalid — that's the right "no colour"
     // value for the UI to test against with isValid().
     const QVariant catId = row.value("CategoryID");
     e.categoryId    = catId.isNull() ? -1 : catId.toInt();
     e.status        = row.value("Status",       "active").toString();
     e.categoryName  = row.value("CategoryName", QString()).toString();
     e.categoryColor = QColor(row.value("CategoryColor", QString()).toString());
+    
+    // Calculate overall progress by averaging all session/task progress values
+    e.overallProgress = 0;
+    if (db && e.id >= 0) {
+        const QList<UnitData> units = db->getUnitsForParent(e.id);
+        int sum = 0;
+        int count = 0;
+        for (const UnitData& u : units) {
+            const QList<SessionTaskData> sessions = db->getSessionTasksForUnit(u.id);
+            for (const SessionTaskData& s : sessions) {
+                sum += s.progress;
+                ++count;
+            }
+        }
+        e.overallProgress = (count == 0) ? 0 : (sum / count);
+    }
+    
     return e;
 }
 
@@ -491,7 +508,7 @@ QList<EntityData> DatabaseManager::fetchAllEntities() {
     QList<EntityData> list;
     auto rows = executeSelectQuery(
         QString(kEntitySelectSql) + "ORDER BY cp.CreatedAt ASC");
-    for (const auto& row : rows) list.append(rowToEntity(row));
+    for (const auto& row : rows) list.append(rowToEntity(row, this));
     return list;
 }
 
@@ -500,7 +517,7 @@ QList<EntityData> DatabaseManager::fetchAllCourses() {
     auto rows = executeSelectQuery(
         QString(kEntitySelectSql) +
         "WHERE cp.Type = 'Course' ORDER BY cp.CreatedAt ASC");
-    for (const auto& row : rows) list.append(rowToEntity(row));
+    for (const auto& row : rows) list.append(rowToEntity(row, this));
     return list;
 }
 
@@ -509,7 +526,7 @@ QList<EntityData> DatabaseManager::fetchAllProjects() {
     auto rows = executeSelectQuery(
         QString(kEntitySelectSql) +
         "WHERE cp.Type = 'Project' ORDER BY cp.CreatedAt ASC");
-    for (const auto& row : rows) list.append(rowToEntity(row));
+    for (const auto& row : rows) list.append(rowToEntity(row, this));
     return list;
 }
 

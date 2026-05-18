@@ -19,7 +19,7 @@ html = """<!DOCTYPE html>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         h1 { text-align: center; color: #2c3e50; }
-        .courses-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; align-items: start; }
+        .courses-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; align-items: start; }
         .course-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 4px solid #3498db; display: flex; flex-direction: column; }
         .course-card.not-started { border-top-color: #e74c3c; }
         .course-card.in-progress { border-top-color: #f39c12; }

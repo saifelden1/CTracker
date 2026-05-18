@@ -2,6 +2,7 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
+#include <QIcon>
 #include <QMessageBox>
 #include <QMutex>
 #include <QStandardPaths>
@@ -63,6 +64,7 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     QApplication::setApplicationName(QStringLiteral("CTracker"));
     QApplication::setOrganizationName(QStringLiteral("CTracker"));
+    QApplication::setWindowIcon(QIcon(QStringLiteral(":/icons/app-icon.png")));
 
     qInfo() << "[APP] starting";
 

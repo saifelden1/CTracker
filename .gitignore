@@ -7,10 +7,8 @@ prompt.md
 .instructions.md
 
 # Build directories
-build/
 bin/
 lib/
-CTracker/build/
 CTracker/bin/
 CTracker/lib/
 
@@ -26,3 +24,10 @@ CTracker/lib/
 Thumbs.db
 *.exe
 *.out
+
+# Personal / sensitive data files (never push these)
+data/courses.md
+data/courses_import.json
+data/courses_tracker.html
+data/personal-info.md
+data/saif-elden-mahmoud-ATS-CV.pdf

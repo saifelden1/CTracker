@@ -144,6 +144,7 @@ qt_add_executable(CTracker
     ${SOURCES}
     ${HEADERS}
     resources/resources.qrc
+    resources/app_icon.rc
 )
 
 # Include directories — `include/` is the single include root.
