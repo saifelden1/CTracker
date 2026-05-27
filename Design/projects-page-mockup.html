@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>CTracker — New Projects Detail Page (Mock)</title>
+<style>
+  /* ============================================================
+     Palette (matches CTracker QSS theme)
+     bg          #1a1d24
+     elevated    #1f2229
+     surface     #252932
+     sidebar     #16181d
+     border      #2d323d
+     text        #e4e6eb
+     muted       #9ca3af
+     primary     #10b981  (green)
+     red         #ef4444
+     amber       #f59e0b
+     blue        #3b82f6
+     gray        #6b7280
+     ============================================================ */
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #1a1d24;
+    color: #e4e6eb;
+    font: 14px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 24px;
+  }
+
+  /* ── Title bar ──────────────────────────────────────── */
+  .title-bar {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+  }
+  .back-btn {
+    width: 32px; height: 32px;
+    background: #252932; border: 1px solid #2d323d;
+    border-radius: 6px; color: #e4e6eb;
+    display: grid; place-items: center; cursor: pointer;
+    font-size: 18px;
+  }
+  .title { font-size: 22px; font-weight: 600; }
+  .badge {
+    padding: 3px 10px; border-radius: 4px;
+    font-size: 12px; font-weight: 500; color: #fff;
+  }
+  .badge.status-active   { background: #10b981; }
+  .badge.priority-high   { background: #ef4444; }
+  .badge.deadline-warn   { background: #f59e0b; }
+  .spacer { flex: 1; }
+  .ring {
+    width: 56px; height: 56px; border-radius: 50%;
+    background:
+      conic-gradient(#10b981 0 64%, #2d323d 64% 100%);
+    display: grid; place-items: center;
+    position: relative;
+  }
+  .ring::before {
+    content: ""; position: absolute;
+    inset: 6px; border-radius: 50%; background: #1a1d24;
+  }
+  .ring-value {
+    position: relative; font-size: 13px; font-weight: 600;
+  }
+  .btn {
+    padding: 6px 12px; border-radius: 6px;
+    background: #252932; border: 1px solid #2d323d;
+    color: #e4e6eb; cursor: pointer; font-size: 13px;
+  }
+  .btn.primary { background: #10b981; border-color: #10b981; color: #fff; }
+  .btn:hover   { background: #2d323d; }
+  .btn.primary:hover { background: #0ea271; }
+
+  /* ── Body grid: tasks (left)  +  info panel (right) ── */
+  .body {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 16px;
+  }
+
+  /* ── Left pane: tabs + toolbar + board ─────────────── */
+  .tabs {
+    display: flex; gap: 4px; padding: 4px;
+    background: #1f2229; border: 1px solid #2d323d;
+    border-radius: 8px; width: fit-content;
+    margin-bottom: 12px;
+  }
+  .tab {
+    padding: 6px 14px; border-radius: 6px; font-size: 13px;
+    cursor: pointer; color: #9ca3af;
+  }
+  .tab.active { background: #252932; color: #e4e6eb; }
+
+  .toolbar {
+    display: flex; gap: 8px; margin-bottom: 12px; align-items: center;
+  }
+  .toolbar input.search {
+    flex: 1; background: #1f2229; border: 1px solid #2d323d;
+    border-radius: 6px; padding: 7px 10px; color: #e4e6eb;
+  }
+  .toolbar select {
+    background: #1f2229; border: 1px solid #2d323d;
+    border-radius: 6px; padding: 7px 10px; color: #e4e6eb;
+  }
+
+  /* ── Kanban board ──────────────────────────────────── */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .column {
+    background: #1f2229;
+    border: 1px solid #2d323d;
+    border-radius: 10px;
+    min-height: 360px;
+    display: flex; flex-direction: column;
+  }
+  .col-head {
+    padding: 10px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #2d323d;
+    font-size: 13px; font-weight: 600;
+  }
+  .col-head .count {
+    background: #252932; color: #9ca3af;
+    padding: 2px 8px; border-radius: 10px; font-size: 11px;
+    font-weight: 500;
+  }
+  .col-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; display: inline-block; vertical-align: middle; }
+  .col-todo .col-dot       { background: #6b7280; }
+  .col-progress .col-dot   { background: #3b82f6; }
+  .col-review .col-dot     { background: #f59e0b; }
+  .col-done .col-dot       { background: #10b981; }
+
+  .col-body {
+    padding: 10px; display: flex; flex-direction: column;
+    gap: 8px; flex: 1;
+  }
+
+  /* ── Task card ─────────────────────────────────────── */
+  .task {
+    background: #252932;
+    border: 1px solid #2d323d;
+    border-left: 3px solid #6b7280;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: grab;
+  }
+  .task:hover { border-color: #10b981; }
+  .task.p-high   { border-left-color: #ef4444; }
+  .task.p-medium { border-left-color: #f59e0b; }
+  .task.p-low    { border-left-color: #6b7280; }
+
+  .task-title {
+    font-size: 13px; font-weight: 500;
+    margin-bottom: 6px;
+    line-height: 1.35;
+  }
+  .task-meta {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: #9ca3af;
+  }
+  .due-pill {
+    padding: 2px 6px; border-radius: 4px; font-size: 11px;
+  }
+  .due-pill.red   { background: rgba(239, 68, 68, 0.15);  color: #ef4444; }
+  .due-pill.amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+  .due-pill.gray  { background: rgba(107, 114, 128, 0.20); color: #9ca3af; }
+
+  .unit-tag {
+    background: #1a1d24; color: #9ca3af;
+    padding: 2px 6px; border-radius: 4px;
+    font-size: 10px;
+  }
+
+  /* ── Right info panel (unchanged from current app) ── */
+  .info-panel {
+    background: #252932;
+    border: 1px solid #2d323d;
+    border-radius: 8px;
+    padding: 16px;
+    height: fit-content;
+  }
+  .info-panel h3 { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
+  .info-label   { font-size: 11px; color: #9ca3af; margin-top: 12px; }
+  .info-value   { font-size: 13px; color: #e4e6eb; margin-top: 4px; }
+  .team-chip {
+    display: inline-block;
+    background: #2d323d; color: #e4e6eb;
+    padding: 3px 8px; border-radius: 4px;
+    font-size: 12px; margin-right: 4px; margin-top: 4px;
+  }
+  .info-panel a { color: #10b981; text-decoration: none; font-size: 13px; }
+  .info-panel a:hover { text-decoration: underline; }
+  .stat-row {
+    display: flex; justify-content: space-between;
+    padding: 6px 0; border-bottom: 1px solid #2d323d;
+    font-size: 13px;
+  }
+  .stat-row:last-child { border-bottom: 0; }
+  .stat-row .v { color: #e4e6eb; font-weight: 600; }
+  .stat-row .k { color: #9ca3af; }
+
+  /* ── Note callout ──────────────────────────────────── */
+  .note {
+    margin-top: 24px;
+    padding: 16px 20px;
+    background: #1f2229;
+    border-left: 3px solid #10b981;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #cdd1d8;
+    line-height: 1.6;
+  }
+  .note b { color: #10b981; }
+  .note code {
+    background: #2d323d; padding: 1px 5px; border-radius: 3px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ───── Title bar ───── -->
+  <div class="title-bar">
+    <button class="back-btn" title="Back">←</button>
+    <div class="title">CTracker Mobile App</div>
+    <span class="badge status-active">Active</span>
+    <span class="badge priority-high">High priority</span>
+    <span class="badge deadline-warn">12d left</span>
+    <div class="spacer"></div>
+    <div class="ring"><div class="ring-value">64%</div></div>
+    <button class="btn">+ Unit</button>
+    <button class="btn primary">+ Task</button>
+  </div>
+
+  <!-- ───── Body: left tabs/board, right info panel ───── -->
+  <div class="body">
+
+    <div>
+      <!-- View-mode tabs -->
+      <div class="tabs">
+        <div class="tab">Overview</div>
+        <div class="tab active">Board</div>
+        <div class="tab">List</div>
+        <div class="tab">Timeline</div>
+      </div>
+
+      <!-- Toolbar: filter / search -->
+      <div class="toolbar">
+        <input class="search" type="text" placeholder="🔍  Search tasks…" />
+        <select>
+          <option>Unit: All</option>
+          <option>Auth module</option>
+          <option>Onboarding</option>
+          <option>Backend</option>
+        </select>
+        <select>
+          <option>Priority: All</option>
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
+        <select>
+          <option>Sort: Due date</option>
+          <option>Priority</option>
+          <option>Last updated</option>
+          <option>Name</option>
+        </select>
+      </div>
+
+      <!-- Kanban board -->
+      <div class="board">
+
+        <!-- Todo column -->
+        <div class="column col-todo">
+          <div class="col-head">
+            <span><span class="col-dot"></span>Todo</span>
+            <span class="count">3</span>
+          </div>
+          <div class="col-body">
+            <div class="task p-medium">
+              <div class="task-title">Wire forgot-password flow</div>
+              <div class="task-meta">
+                <span class="unit-tag">Auth module</span>
+                <span class="due-pill gray">No date</span>
+              </div>
+            </div>
+            <div class="task p-high">
+              <div class="task-title">Profile picture upload + crop</div>
+              <div class="task-meta">
+                <span class="unit-tag">Profile</span>
+                <span class="due-pill amber">in 6d</span>
+              </div>
+            </div>
+            <div class="task p-low">
+              <div class="task-title">Add analytics opt-out toggle</div>
+              <div class="task-meta">
+                <span class="unit-tag">Settings</span>
+                <span class="due-pill gray">No date</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- In progress column -->
+        <div class="column col-progress">
+          <div class="col-head">
+            <span><span class="col-dot"></span>In progress</span>
+            <span class="count">2</span>
+          </div>
+          <div class="col-body">
+            <div class="task p-high">
+              <div class="task-title">Refactor SQLite layer for Supabase sync</div>
+              <div class="task-meta">
+                <span class="unit-tag">Backend</span>
+                <span class="due-pill red">in 2d</span>
+              </div>
+            </div>
+            <div class="task p-medium">
+              <div class="task-title">Build onboarding carousel screens</div>
+              <div class="task-meta">
+                <span class="unit-tag">Onboarding</span>
+                <span class="due-pill amber">in 5d</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Review column -->
+        <div class="column col-review">
+          <div class="col-head">
+            <span><span class="col-dot"></span>Review</span>
+            <span class="count">1</span>
+          </div>
+          <div class="col-body">
+            <div class="task p-medium">
+              <div class="task-title">Email verification deep-link</div>
+              <div class="task-meta">
+                <span class="unit-tag">Auth module</span>
+                <span class="due-pill gray">No date</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Done column -->
+        <div class="column col-done">
+          <div class="col-head">
+            <span><span class="col-dot"></span>Done</span>
+            <span class="count">4</span>
+          </div>
+          <div class="col-body">
+            <div class="task p-low">
+              <div class="task-title">Set up Qt 6 + CMake skeleton</div>
+              <div class="task-meta">
+                <span class="unit-tag">Backend</span>
+                <span class="due-pill gray">done</span>
+              </div>
+            </div>
+            <div class="task p-medium">
+              <div class="task-title">Login screen layout</div>
+              <div class="task-meta">
+                <span class="unit-tag">Auth module</span>
+                <span class="due-pill gray">done</span>
+              </div>
+            </div>
+            <div class="task p-low">
+              <div class="task-title">Splash screen icon</div>
+              <div class="task-meta">
+                <span class="unit-tag">Onboarding</span>
+                <span class="due-pill gray">done</span>
+              </div>
+            </div>
+            <div class="task p-medium">
+              <div class="task-title">DB migration runner</div>
+              <div class="task-meta">
+                <span class="unit-tag">Backend</span>
+                <span class="due-pill gray">done</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Right info panel (UNCHANGED widget from current app) ── -->
+    <div class="info-panel">
+      <h3>Project Info</h3>
+
+      <div class="info-label">Description</div>
+      <div class="info-value">
+        Cross-platform mobile companion to CTracker desktop. Read-only first
+        release; full sync in v2.
+      </div>
+
+      <div class="info-label">Deadline</div>
+      <div class="info-value">June 7, 2026</div>
+
+      <div class="info-label">Team</div>
+      <div class="info-value">
+        <span class="team-chip">Saif</span>
+        <span class="team-chip">Sara</span>
+      </div>
+
+      <div class="info-label">Links</div>
+      <div class="info-value">
+        <a href="#">Figma file</a><br/>
+        <a href="#">GitHub repo</a>
+      </div>
+
+      <div class="info-label">Stats</div>
+      <div class="stat-row"><span class="k">Total tasks</span><span class="v">10</span></div>
+      <div class="stat-row"><span class="k">Completed</span><span class="v">4</span></div>
+      <div class="stat-row"><span class="k">Overdue</span><span class="v" style="color:#ef4444">1</span></div>
+      <div class="stat-row"><span class="k">Due this week</span><span class="v">3</span></div>
+    </div>
+
+  </div>
+
+  <!-- ── Implementation note (the "minimal change" pitch) ── -->
+  <div class="note">
+    <b>Why this design is cheap to ship:</b>
+    No new tables. No migration script.
+    <br/><br/>
+    1. Add <b>two columns</b> to the existing <code>SessionsTasks</code> table:
+       <code>status TEXT DEFAULT 'todo'</code> and <code>dueDate TEXT NULL</code>.
+       Map the legacy <code>progress</code> field once: <code>0 → 'todo'</code>,
+       <code>1–99 → 'in_progress'</code>, <code>100 → 'done'</code>. Done.<br/>
+    2. <b>Keep</b> <code>EntityDetailView</code>, <code>ProjectMetaData</code>,
+       and the right-hand <b>Project Info panel</b> exactly as they are.<br/>
+    3. <b>Inside</b> <code>ProjectDetailView::setupProjectChrome()</code>, replace
+       the existing left-column scroll-area (built by the base class) with a new
+       <code>TasksBoardWidget</code>. The base class's units/sessions data is
+       reused — every <code>SessionTaskData</code> simply renders as a card in
+       the column matching its <code>status</code>.<br/>
+    4. The <b>Units</b> stay — they just become the <code>unit-tag</code> chip
+       at the bottom of each card. The "+ Unit" button still works. The
+       "+ Task" button writes a row with <code>status='todo'</code> instead of
+       <code>progress=0</code>.<br/>
+    5. The <b>Courses</b> code path is <b>not touched</b> at all —
+       <code>UnitExpandableWidget</code> and <code>SessionTaskRow</code>
+       keep doing what they do for courses.<br/><br/>
+    Total scope: ~2 SQL <code>ALTER TABLE</code>s + 1 new widget
+    (<code>TasksBoardWidget</code>) + ~30-line patch to
+    <code>ProjectDetailView</code>. Everything else stays.
+  </div>
+
+</body>
+</html>

@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QStyleFactory>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -62,6 +63,12 @@ int main(int argc, char* argv[]) {
     qInstallMessageHandler(ctrackerMessageHandler);
 
     QApplication app(argc, argv);
+    // Force Fusion style. The default qmodernwindowsstyle plugin on Win11
+    // re-polishes top-level popups (QComboBox dropdown, QMenu) after QSS is
+    // applied, overriding the background to mimic the OS's translucent menus
+    // — which is why our dropdowns "started right then went transparent".
+    // Fusion respects QSS fully and paints opaque.
+    QApplication::setStyle(QStyleFactory::create(QStringLiteral("fusion")));
     QApplication::setApplicationName(QStringLiteral("CTracker"));
     QApplication::setOrganizationName(QStringLiteral("CTracker"));
     QApplication::setWindowIcon(QIcon(QStringLiteral(":/icons/app-icon.png")));

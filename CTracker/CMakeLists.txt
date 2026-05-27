@@ -60,6 +60,9 @@ set(SOURCES
     src/projects/ProjectsFilterBar.cpp
     src/projects/ProjectsView.cpp
     src/projects/ProjectDetailView.cpp
+    src/projects/TaskBoardCard.cpp           # Phase 10 — kanban card
+    src/projects/TasksBoardWidget.cpp        # Phase 10 — kanban board
+    src/projects/TaskDetailDialog.cpp        # Phase 10 — task detail editor
 
     # pomodoro/
     src/pomodoro/PomodoroTimerWidget.cpp
@@ -124,6 +127,9 @@ set(HEADERS
     include/projects/ProjectsFilterBar.h
     include/projects/ProjectsView.h
     include/projects/ProjectDetailView.h # alias header
+    include/projects/TaskBoardCard.h         # Phase 10 — kanban card
+    include/projects/TasksBoardWidget.h      # Phase 10 — kanban board
+    include/projects/TaskDetailDialog.h      # Phase 10 — task detail editor
 
     # analytics/
     include/analytics/ActivityLogModel.h

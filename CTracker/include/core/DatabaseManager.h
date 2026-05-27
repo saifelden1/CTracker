@@ -67,6 +67,19 @@ public:
     int  getSessionTaskProgress(int sessionId);
     QList<SessionTaskData> getSessionTasksForUnit(int unitId);
 
+    // ---- Phase 10: Projects tasks board ----
+    // Status writer also keeps CurrentProgress in sync (todo=0, done=100,
+    // in_progress/review left at the current value or bumped to 1 if 0)
+    // so the existing overall-progress ring stays correct.
+    bool setSessionTaskStatus     (int sessionId, const QString& status);
+    bool setSessionTaskDueDate    (int sessionId, const QDate&   dueDate);
+    bool setSessionTaskDescription(int sessionId, const QString& description);
+    // All tasks of a project, with their owning unit name attached.
+    QList<SessionTaskData> fetchTasksForProject(int projectId);
+    // Single task fetch (used by TaskDetailDialog so it doesn't rely on
+    // the board's in-memory list). Returns id == -1 if not found.
+    SessionTaskData getSessionTask(int sessionId);
+
     // ---- Activity log operations ----
     int  logActivity(int itemId, int oldVal, int newVal,
                      const QString& type,

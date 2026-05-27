@@ -189,6 +189,10 @@ bool DatabaseManager::createTables()
     // -- SessionsTasks ----------------------------------------
     // Each Session/Task belongs to one Unit.
     // CHECK constraint: progress can only be 0..100.
+    //
+    // Phase 10: Status and DueDate columns added so the same table can
+    // back the new Projects kanban board. Courses ignore them and keep
+    // using CurrentProgress + the slider UI.
     ok = executeQuery(R"(
         CREATE TABLE IF NOT EXISTS SessionsTasks (
             ID              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -196,11 +200,56 @@ bool DatabaseManager::createTables()
             Name            TEXT    NOT NULL,
             CurrentProgress INTEGER DEFAULT 0
                 CHECK(CurrentProgress >= 0 AND CurrentProgress <= 100),
+            Status          TEXT    NOT NULL DEFAULT 'todo'
+                CHECK(Status IN ('todo','in_progress','review','done')),
+            DueDate         TEXT,
+            Description     TEXT,
             CreatedAt       TEXT    DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (UnitID) REFERENCES Units(ID) ON DELETE CASCADE
         )
     )");
     if (!ok) return false;
+
+    // Idempotent migration for pre-Phase-10 databases that already exist
+    // on disk without the Status / DueDate columns. PRAGMA table_info
+    // returns one row per column; we ALTER only the missing ones, then
+    // backfill Status from CurrentProgress so legacy rows look right
+    // in the new kanban board.
+    {
+        QList<QVariantMap> cols = executeSelectQuery(
+            "PRAGMA table_info(SessionsTasks)");
+        bool hasStatus = false, hasDueDate = false, hasDescription = false;
+        for (const QVariantMap& row : cols) {
+            const QString name = row.value("name").toString();
+            if (name == "Status")      hasStatus      = true;
+            if (name == "DueDate")     hasDueDate     = true;
+            if (name == "Description") hasDescription = true;
+        }
+        if (!hasStatus) {
+            // SQLite ALTER TABLE can't add a CHECK constraint inline, so
+            // the column starts permissive; the CHECK only applies to
+            // newly-created tables. Backfill values are guaranteed valid.
+            if (!executeQuery(
+                    "ALTER TABLE SessionsTasks ADD COLUMN Status TEXT "
+                    "NOT NULL DEFAULT 'todo'")) return false;
+            // Backfill from CurrentProgress: 100 -> done, 1..99 -> in_progress, 0 -> todo
+            if (!executeQuery(
+                    "UPDATE SessionsTasks SET Status = "
+                    "  CASE WHEN CurrentProgress >= 100 THEN 'done' "
+                    "       WHEN CurrentProgress >  0   THEN 'in_progress' "
+                    "       ELSE 'todo' END")) return false;
+        }
+        if (!hasDueDate) {
+            if (!executeQuery(
+                    "ALTER TABLE SessionsTasks ADD COLUMN DueDate TEXT"))
+                return false;
+        }
+        if (!hasDescription) {
+            if (!executeQuery(
+                    "ALTER TABLE SessionsTasks ADD COLUMN Description TEXT"))
+                return false;
+        }
+    }
 
     // -- ActivityLog ------------------------------------------
     // Every time a slider is moved, one row is written here.
@@ -665,13 +714,139 @@ QList<SessionTaskData> DatabaseManager::getSessionTasksForUnit(int unitId) {
     );
     for (const auto& row : rows) {
         SessionTaskData s;
-        s.id       = row["ID"].toInt();
-        s.unitId   = row["UnitID"].toInt();
-        s.name     = row["Name"].toString();
-        s.progress = row["CurrentProgress"].toInt();
+        s.id          = row["ID"].toInt();
+        s.unitId      = row["UnitID"].toInt();
+        s.name        = row["Name"].toString();
+        s.progress    = row["CurrentProgress"].toInt();
+        s.status      = row["Status"].toString();
+        if (s.status.isEmpty()) s.status = "todo";
+        const QString dueStr = row["DueDate"].toString();
+        if (!dueStr.isEmpty()) s.dueDate = QDate::fromString(dueStr, Qt::ISODate);
+        s.description = row["Description"].toString();
         list.append(s);
     }
     return list;
+}
+
+// ============================================================
+//  Phase 10 — Projects tasks board API
+// ============================================================
+bool DatabaseManager::setSessionTaskStatus(int sessionId, const QString& status) {
+    // Validate against the CHECK constraint vocabulary so a bad string
+    // never reaches SQLite and yields a confusing constraint error.
+    static const QSet<QString> kValid = {"todo", "in_progress", "review", "done"};
+    if (!kValid.contains(status)) {
+        qWarning() << "[DB] setSessionTaskStatus: invalid status" << status;
+        return false;
+    }
+
+    // Keep CurrentProgress in sync so the entity's overall-progress ring
+    // (which averages CurrentProgress across sessions) stays accurate
+    // without touching CourseDetailView/EntityDetailView.
+    int newProgress = -1;
+    if (status == "done")             newProgress = 100;
+    else if (status == "todo")        newProgress = 0;
+    // 'in_progress' / 'review': don't move progress unless it's still 0,
+    // in which case bump to 1 so the column shows partial progress.
+    int currentProgress = getSessionTaskProgress(sessionId);
+    if (newProgress < 0 && currentProgress == 0) newProgress = 1;
+
+    beginTransaction();
+    bool ok = executeQuery(
+        "UPDATE SessionsTasks SET Status = :s WHERE ID = :id",
+        {{":s", status}, {":id", sessionId}});
+    if (ok && newProgress >= 0 && newProgress != currentProgress) {
+        ok = executeQuery(
+            "UPDATE SessionsTasks SET CurrentProgress = :p WHERE ID = :id",
+            {{":p", newProgress}, {":id", sessionId}});
+        if (ok) {
+            // Log the implicit progress change so the heatmap reflects it.
+            const QString typeStr = "Project";  // status changes only apply to project tasks
+            logActivity(sessionId, currentProgress, newProgress, typeStr);
+        }
+    }
+    if (ok) commitTransaction(); else rollbackTransaction();
+    if (ok) emitDataChanged();
+    return ok;
+}
+
+bool DatabaseManager::setSessionTaskDueDate(int sessionId, const QDate& dueDate) {
+    const QString val = dueDate.isValid() ? dueDate.toString(Qt::ISODate)
+                                          : QString();
+    bool ok;
+    if (val.isEmpty()) {
+        ok = executeQuery(
+            "UPDATE SessionsTasks SET DueDate = NULL WHERE ID = :id",
+            {{":id", sessionId}});
+    } else {
+        ok = executeQuery(
+            "UPDATE SessionsTasks SET DueDate = :d WHERE ID = :id",
+            {{":d", val}, {":id", sessionId}});
+    }
+    if (ok) emitDataChanged();
+    return ok;
+}
+
+QList<SessionTaskData> DatabaseManager::fetchTasksForProject(int projectId) {
+    QList<SessionTaskData> list;
+    // One JOIN over Units → SessionsTasks so the board renders without
+    // a second per-row query for the unit name.
+    auto rows = executeSelectQuery(R"(
+        SELECT st.ID              AS ID,
+               st.UnitID           AS UnitID,
+               st.Name             AS Name,
+               st.CurrentProgress  AS CurrentProgress,
+               st.Status           AS Status,
+               st.DueDate          AS DueDate,
+               st.Description      AS Description,
+               u.Name              AS UnitName
+        FROM   SessionsTasks st
+        JOIN   Units u ON u.ID = st.UnitID
+        WHERE  u.ParentID = :pid
+        ORDER  BY st.ID ASC
+    )", {{":pid", projectId}});
+    for (const auto& row : rows) {
+        SessionTaskData s;
+        s.id          = row["ID"].toInt();
+        s.unitId      = row["UnitID"].toInt();
+        s.name        = row["Name"].toString();
+        s.progress    = row["CurrentProgress"].toInt();
+        s.status      = row["Status"].toString();
+        if (s.status.isEmpty()) s.status = "todo";
+        const QString dueStr = row["DueDate"].toString();
+        if (!dueStr.isEmpty()) s.dueDate = QDate::fromString(dueStr, Qt::ISODate);
+        s.description = row["Description"].toString();
+        s.unitName    = row["UnitName"].toString();
+        list.append(s);
+    }
+    return list;
+}
+
+bool DatabaseManager::setSessionTaskDescription(int sessionId, const QString& description) {
+    bool ok = executeQuery(
+        "UPDATE SessionsTasks SET Description = :d WHERE ID = :id",
+        {{":d", description}, {":id", sessionId}});
+    if (ok) emitDataChanged();
+    return ok;
+}
+
+SessionTaskData DatabaseManager::getSessionTask(int sessionId) {
+    SessionTaskData s;  // default id = -1 signals "not found"
+    auto rows = executeSelectQuery(
+        "SELECT * FROM SessionsTasks WHERE ID = :id",
+        {{":id", sessionId}});
+    if (rows.isEmpty()) return s;
+    const QVariantMap& row = rows.first();
+    s.id          = row["ID"].toInt();
+    s.unitId      = row["UnitID"].toInt();
+    s.name        = row["Name"].toString();
+    s.progress    = row["CurrentProgress"].toInt();
+    s.status      = row["Status"].toString();
+    if (s.status.isEmpty()) s.status = "todo";
+    const QString dueStr = row["DueDate"].toString();
+    if (!dueStr.isEmpty()) s.dueDate = QDate::fromString(dueStr, Qt::ISODate);
+    s.description = row["Description"].toString();
+    return s;
 }
 
 // ============================================================

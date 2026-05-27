@@ -11,6 +11,7 @@ class QLabel;
 class QPushButton;
 class QVBoxLayout;
 class QScrollArea;
+class TasksBoardWidget;
 
 // ============================================================
 //  ProjectDetailView — Task 7.6
@@ -39,10 +40,23 @@ public:
 protected slots:
     void onDataChanged() override;
 
+protected:
+    // Catches double-clicks on the Description / Team / Links sections
+    // so the user can edit them in place without us subclassing every
+    // QLabel/QWidget that lives inside the info panel.
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
 private:
     void setupProjectChrome();   // inserts project-specific widgets + two-column layout
     void refreshProjectInfo();   // refreshes sidebar badges and info panel
     void refreshDeadlineBadge();
+
+    // Inline-edit handlers — each opens a small modal, writes through
+    // DatabaseManager::upsertProjectMeta, and lets dataChanged() drive
+    // the refresh so the panel stays in sync with the DB.
+    void editDescription();
+    void editTeam();
+    void editLinks();
 
     // ── Project state ──
     QString        m_projectStatus   = "active";
@@ -52,6 +66,9 @@ private:
     QLabel* m_statusBadge      = nullptr;
     QLabel* m_priorityBadge    = nullptr;
     QLabel* m_deadlineBadge    = nullptr;
+
+    // ── Left-column tasks board (Phase 10) ──
+    TasksBoardWidget* m_tasksBoard  = nullptr;
 
     // ── Right-column info panel ──
     QWidget*      m_infoPanel       = nullptr;

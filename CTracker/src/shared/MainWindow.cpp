@@ -1,5 +1,6 @@
 #include "shared/MainWindow.h"
 
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QStackedWidget>
 #include <QWidget>
@@ -141,7 +142,11 @@ void MainWindow::loadStyleSheet() {
     QTextStream in(&file);
     const QString qss = in.readAll();
     if (!qss.isEmpty()) {
-        setStyleSheet(qss);
+        // Apply to qApp so top-level popups (QComboBox dropdowns, QMenu, tooltips)
+        // inherit the cascade — they are not children of MainWindow in the widget
+        // tree, so setStyleSheet(this, ...) does not reach them and they fall back
+        // to the native palette (transparent/light on Windows).
+        qApp->setStyleSheet(qss);
     }
 }
 

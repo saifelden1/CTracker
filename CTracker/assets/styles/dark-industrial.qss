@@ -273,7 +273,13 @@ QComboBox::down-arrow:hover {
     border-top-color: #e4e6eb;
 }
 
-/* Dropdown popup styling */
+/* Dropdown popup styling.
+   On Windows the popup is a top-level window owned by the desktop, not a
+   child of MainWindow. We must (1) apply this stylesheet via qApp (done in
+   MainWindow::loadStyleSheet) AND (2) paint both the inner QListView and
+   the surrounding QFrame opaque, otherwise the popup briefly shows the
+   styled list, then re-polishes against the native palette and turns
+   transparent. */
 QComboBox QAbstractItemView {
     background-color: #1f2229;
     color: #e4e6eb;
@@ -283,6 +289,14 @@ QComboBox QAbstractItemView {
     selection-color: #10b981;
     outline: none;
     padding: 4px;
+}
+
+/* The popup is wrapped in a QFrame — paint it opaque too so no see-through. */
+QComboBox QAbstractItemView QFrame,
+QComboBox QFrame {
+    background-color: #1f2229;
+    border: 1px solid #404854;
+    border-radius: 6px;
 }
 
 QComboBox QAbstractItemView::item {

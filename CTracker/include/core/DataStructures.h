@@ -67,11 +67,23 @@ struct UnitData {
 // A Session (course flavour) or Task (project flavour). The terminal
 // leaf of the hierarchy — this is what the user actually moves the
 // progress slider on.
+//
+// Phase 10 additions (`status`, `dueDate`, `unitName`) are populated for
+// the new Projects kanban board. Course code paths leave them at their
+// defaults and keep driving the row from `progress`. `unitName` is
+// resolved by a JOIN in `fetchTasksForProject()` so the board can
+// render the unit-tag chip without a second query.
 struct SessionTaskData {
     int     id       = -1;
     int     unitId   = -1;                // FK → Units.ID
     QString name;
     int     progress = 0;                 // 0..100
+
+    // Phase 10 — Projects tasks board
+    QString status   = "todo";            // "todo" | "in_progress" | "review" | "done"
+    QDate   dueDate;                      // invalid() when unset
+    QString unitName;                     // resolved on read for project queries
+    QString description;                  // free-form, multi-line allowed
 };
 
 // One row of ActivityLog — written every time a slider value changes.
